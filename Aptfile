@@ -1,0 +1,15 @@
+emacs
+curl
+make
+just
+wget
+postgresql-client
+binutils
+libproj-dev
+gdal-bin
+libblas-dev
+python-dev-is-python3
+build-essential
+libssl-dev
+libffi-dev
+python3-dev

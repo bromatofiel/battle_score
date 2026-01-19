@@ -1,0 +1,83 @@
+x-django-variables: &django-variables
+  PGSQL_HOST: db # Name of the postgresql docker image
+  PGSQL_NAME: backend # DB name
+  PGSQL_PORT: 5432
+  PGSQL_USER: postgres
+  PGSQL_PASS: dev
+  # Developers only
+  DEBUG: 'True'
+  PYTHONBREAKPOINT: 'ipdb.set_trace'
+  ENABLE_DEBUG_TOOLBAR: 'True'
+  REDIS_URL: 'redis://cache:6379'
+
+services:
+  db:
+    image: "kartoza/postgis:14-3.2"
+    # image: "postgres:15.5"
+    container_name: 'bts_db'
+    environment:
+      POSTGRES_DB: 'backend'
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'dev'
+      ALLOW_IP_RANGE: '0.0.0.0/0'
+      # Add extensions you need to be enabled by default in the DB. Default are: postgis,hstore,postgis_topology,postgis_raster,pgrouting
+      POSTGRES_MULTIPLE_EXTENSIONS: 'postgis,unaccent'
+    volumes:
+      - postgresql:/var/lib/postgresql
+      - dbbackups:/backups
+    healthcheck:
+      test: "exit 0"
+    ports:
+      - 5432:5432
+
+  cache:
+    image: redis:7.4.7-alpine
+    container_name: 'bts_cache'
+    environment:
+      ALLOW_EMPTY_PASSWORD: true
+    volumes:
+      - redis:/data
+    ports:
+      - 6379:6379
+
+  server:
+    image: 'bts_backend'
+    container_name: 'bts_server'
+    build:
+      context: .
+      target: runner
+    entrypoint: /app/entrypoint.sh
+    command: python manage.py runserver 0.0.0.0:8000 --traceback
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/app
+    dns:
+      - 8.8.8.8
+      - 4.4.4.4
+    ports:
+      - 8004:8000
+    depends_on:
+      - db
+      - cache
+    environment:
+      <<: *django-variables
+
+  worker:
+    image: 'bts_backend'
+    container_name: 'bts_worker'
+    entrypoint: /app/entrypoint.sh
+    command: python manage.py rqworker default
+    environment:
+      <<: *django-variables
+    depends_on:
+      - db
+      - cache
+      - server
+
+volumes:
+  postgresql:
+  dbbackups:
+  redis:
+
+

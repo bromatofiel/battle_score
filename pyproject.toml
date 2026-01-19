@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "battle-score"
+version = "0.0.1"
+description = "Application to manage tournament participants (invite, team, role, ...), and matches (score, ordering, classment, ...)."
+keywords = ["tournament", "match", "score", "classment"]
+authors = [
+  { name="Jérémy MARC"},
+]
+maintainers = [
+  { name="Jérémy MARC"},
+]
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "BSL"
+license-files = ["LICENSE.md"]
+
+[project.urls]
+Homepage = "https://github.com/bromatofiel/battle-score"
+Repository = "https://github.com/bromatofiel/battle-score"
+Issues = "https://github.com/bromatofiel/battle-score/issues"
