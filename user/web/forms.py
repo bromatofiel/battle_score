@@ -31,16 +31,7 @@ class LoginForm(forms.Form):
     )
 
 
-class SignupForm(forms.Form):
-    email = forms.EmailField(
-        label=_("Email"),
-        widget=forms.EmailInput(
-            attrs={
-                "placeholder": _("votre@email.com"),
-                "class": "form-input",
-            }
-        ),
-    )
+class SignupForm(forms.ModelForm):
     pseudo = forms.CharField(
         label=_("Pseudo"),
         max_length=50,
@@ -69,6 +60,18 @@ class SignupForm(forms.Form):
             }
         ),
     )
+
+    class Meta:
+        model = User
+        fields = ["email"]
+        widgets = {
+            "email": forms.EmailInput(
+                attrs={
+                    "placeholder": _("votre@email.com"),
+                    "class": "form-input",
+                }
+            ),
+        }
 
     def clean_email(self):
         email = self.cleaned_data.get("email")

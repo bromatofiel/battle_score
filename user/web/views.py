@@ -6,62 +6,61 @@ from django.shortcuts import render, redirect
 from user.controllers import UserController
 from tournament.models import Tournament, Participant
 from django.contrib.auth import login, logout, authenticate
+from django.views.generic import FormView, TemplateView
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 
-class LoginView(View):
+class LoginView(FormView):
     template_name = "user/login.html"
+    form_class = LoginForm
 
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             next_url = request.GET.get("next") or "dashboard"
             return redirect(next_url)
-        form = LoginForm()
-        return render(request, self.template_name, {"form": form})
+        return super().get(request, *args, **kwargs)
 
-    def post(self, request):
-        form = LoginForm(request.POST)
-        if form.is_valid():
-            email = form.cleaned_data["email"]
-            password = form.cleaned_data["password"]
-            user = authenticate(request, email=email, password=password)
-            if user:
-                login(request, user)
-                return redirect("home")  # Correct redirect to be determined
-            else:
-                messages.error(request, "Email ou mot de passe invalide.")
-
-        return render(request, self.template_name, {"form": form})
+    def form_valid(self, form):
+        email = form.cleaned_data["email"]
+        password = form.cleaned_data["password"]
+        user = authenticate(self.request, email=email, password=password)
+        if user:
+            login(self.request, user)
+            next_url = self.request.GET.get("next") or "home"
+            return redirect(next_url)
+        else:
+            messages.error(self.request, "Email ou mot de passe invalide.")
+            return self.form_invalid(form)
 
 
-class SignupView(View):
+class SignupView(FormView):
     template_name = "user/signup.html"
+    form_class = SignupForm
 
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             next_url = request.GET.get("next") or "dashboard"
             return redirect(next_url)
-        form = SignupForm()
-        return render(request, self.template_name, {"form": form})
+        return super().get(request, *args, **kwargs)
 
-    def post(self, request):
-        form = SignupForm(request.POST)
-        if form.is_valid():
-            UserController.create_user(email=form.cleaned_data["email"], pseudo=form.cleaned_data["pseudo"], password=form.cleaned_data["password"])
-            messages.success(request, "Compte créé avec succès. Vous pouvez maintenant vous connecter.")
-            return redirect("login")
+    def form_valid(self, form):
+        UserController.create_user(
+            email=form.cleaned_data["email"],
+            pseudo=form.cleaned_data["pseudo"],
+            password=form.cleaned_data["password"],
+        )
+        messages.success(self.request, _("Compte créé avec succès. Vous pouvez maintenant vous connecter."))
+        return redirect("login")
 
-        return render(request, self.template_name, {"form": form})
 
-
-class HomeView(View):
+class HomeView(TemplateView):
     template_name = "user/home.html"
 
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             return redirect("dashboard")
-        return render(request, self.template_name)
+        return super().get(request, *args, **kwargs)
 
 
 class LogoutView(View):
@@ -70,21 +69,16 @@ class LogoutView(View):
         return redirect("home")
 
 
-class DashboardView(LoginRequiredMixin, View):
+class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = "user/dashboard.html"
 
-    def get(self, request):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         # Tournaments managed by the user
-        managed_tournaments = Tournament.objects.filter(admin=request.user)
-
+        context["managed_tournaments"] = Tournament.objects.filter(admin=self.request.user)
         # Tournaments where the user is a participant
-        participations = Participant.objects.filter(user=request.user).select_related("tournament")
-
-        context = {
-            "managed_tournaments": managed_tournaments,
-            "participations": participations,
-        }
-        return render(request, self.template_name, context)
+        context["participations"] = Participant.objects.filter(user=self.request.user).select_related("tournament")
+        return context
 
 
 class AccountSettingsView(LoginRequiredMixin, View):

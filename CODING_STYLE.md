@@ -74,8 +74,11 @@ Imports are sorted by `ruff`. The configuration is in `ruff.toml`.
     - Test specific settings should be defined in `core/settings/test.py`.
 - **Environment variables**: Must use library `decouple` to define, load, initialize, and validate environment variables.
 
-### Forms and Views
-- **Inheritance**: Prefer using ModelForm and FormView whenever possible.
+### Forms
+- **Inheritance**: Prefer using ModelForm whenever possible to stick to model validators.
+
+### Views
+- **Inheritance**: Prefer using TemplateView andFormView whenever possible.
 
 ### Security
 - **Authentication**: Use Django authentication.
