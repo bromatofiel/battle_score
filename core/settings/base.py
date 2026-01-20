@@ -1,11 +1,12 @@
 import os
 from pathlib import Path
-from decouple import config, Csv
+
+import dj_database_url
+from decouple import Csv, config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-VERSION = "0.0.1"
 SECRET_KEY = config("SECRET_KEY", default="s3cr3t(*_*)")
 DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*", cast=Csv())
@@ -63,14 +64,7 @@ WSGI_APPLICATION = "core.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-import dj_database_url
-DATABASES = {
-    "default": config(
-        "DATABASE_URL",
-        default="postgis://postgres:dev@db:5432/backend",
-        cast=dj_database_url.parse
-    )
-}
+DATABASES = {"default": config("DATABASE_URL", default="postgis://postgres:dev@db:5432/backend", cast=dj_database_url.parse)}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

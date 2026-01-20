@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install dependencies into a central location (requirements.txt is used to avoid conflicts with local .venv)
 COPY pyproject.toml uv.lock* README.md LICENSE.md* ./
+COPY core/version.py core/version.py
 RUN uv export --no-dev -o requirements.txt && \
     uv pip install --system -r requirements.txt
 

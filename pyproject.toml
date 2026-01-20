@@ -5,6 +5,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["core", "user", "tournament"]
 
+[tool.hatch.version]
+path = "core/version.py"
+
 [project]
 dynamic = ["version"]
 name = "battle-score"

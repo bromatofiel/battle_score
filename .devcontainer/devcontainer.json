@@ -1,0 +1,25 @@
+{
+    "name": "Battle Score",
+    "dockerComposeFile": [
+        "../docker-compose.yml"
+    ],
+    "service": "server",
+    "workspaceFolder": "/app",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "charliermarsh.ruff",
+                "batisteo.vscode-django",
+                "bradlc.vscode-tailwindcss",
+                "ms-azuretools.vscode-docker",
+                "skellock.just"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/usr/local/bin/python"
+            }
+        }
+    },
+    "remoteUser": "root"
+}
