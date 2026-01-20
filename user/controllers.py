@@ -29,3 +29,14 @@ class UserController:
             user.delete()
             return True
         return False
+
+    @staticmethod
+    def update_password(user, old_password, new_password):
+        """
+        Check old password and update to new password.
+        """
+        if user.check_password(old_password):
+            user.set_password(new_password)
+            user.save()
+            return True
+        return False

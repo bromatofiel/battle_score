@@ -34,3 +34,10 @@ class TestAuthRedirection(TestCase):
         self.assertEqual(response.status_code, 200)
         response = self.client.get(reverse("signup"))
         self.assertEqual(response.status_code, 200)
+
+    def test_unauthenticated_redirect_to_correct_login_url(self):
+        """Verify unauthenticated access redirects to /login/ (not account/login/)."""
+        response = self.client.get(reverse("settings"))
+        # Check that it redirects to /login/
+        # Django's default would be /accounts/login/ or similar
+        self.assertRedirects(response, f"{reverse('login')}?next={reverse('settings')}")

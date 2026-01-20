@@ -3,7 +3,7 @@ from django.urls import reverse
 from user.models import User
 
 
-class TestAccountDeletion(TestCase):
+class TestUserDeletion(TestCase):
     def setUp(self):
         self.email = "delete-me@test.com"
         self.password = "security123"

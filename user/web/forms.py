@@ -132,3 +132,27 @@ class DeleteAccountForm(forms.Form):
         label=_("Mot de passe pour confirmer"),
         widget=forms.PasswordInput(attrs={"class": "form-input", "placeholder": "••••••••"}),
     )
+
+
+class PasswordUpdateForm(forms.Form):
+    old_password = forms.CharField(
+        label=_("Ancien mot de passe"),
+        widget=forms.PasswordInput(attrs={"class": "form-input", "placeholder": "••••••••"}),
+    )
+    new_password = forms.CharField(
+        label=_("Nouveau mot de passe"),
+        widget=forms.PasswordInput(attrs={"class": "form-input", "placeholder": "••••••••"}),
+    )
+    confirm_password = forms.CharField(
+        label=_("Confirmer le nouveau mot de passe"),
+        widget=forms.PasswordInput(attrs={"class": "form-input", "placeholder": "••••••••"}),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        new_password = cleaned_data.get("new_password")
+        confirm_password = cleaned_data.get("confirm_password")
+
+        if new_password and confirm_password and new_password != confirm_password:
+            raise forms.ValidationError(_("Les deux mots de passe ne correspondent pas."))
+        return cleaned_data

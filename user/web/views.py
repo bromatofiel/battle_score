@@ -1,7 +1,7 @@
 from user.models import Client
 from django.views import View
 from django.contrib import messages
-from user.web.forms import LoginForm, SignupForm, UserUpdateForm, ClientUpdateForm, DeleteAccountForm, ProfileUpdateForm
+from user.web.forms import LoginForm, SignupForm, UserUpdateForm, ClientUpdateForm, DeleteAccountForm, ProfileUpdateForm, PasswordUpdateForm
 from django.shortcuts import render, redirect
 from user.controllers import UserController
 from tournament.models import Tournament, Participant
@@ -105,6 +105,8 @@ class AccountSettingsView(LoginRequiredMixin, View):
             "user_form": kwargs.get("user_form", UserUpdateForm(instance=user)),
             "profile_form": kwargs.get("profile_form", ProfileUpdateForm(instance=profile)),
             "client_form": kwargs.get("client_form", ClientUpdateForm(instance=client)),
+            "delete_form": kwargs.get("delete_form", DeleteAccountForm()),
+            "password_form": kwargs.get("password_form", PasswordUpdateForm()),
         }
         return context
 
@@ -123,6 +125,7 @@ class AccountSettingsView(LoginRequiredMixin, View):
         profile_form = ProfileUpdateForm(instance=profile)
         client_form = ClientUpdateForm(instance=client)
         delete_form = DeleteAccountForm()
+        password_form = PasswordUpdateForm()
 
         success = False
 
@@ -150,6 +153,17 @@ class AccountSettingsView(LoginRequiredMixin, View):
                     return redirect("home")
                 else:
                     delete_form.add_error("password", _("Mot de passe incorrect."))
+        elif form_name == "password":
+            password_form = PasswordUpdateForm(request.POST)
+            if password_form.is_valid():
+                old_password = password_form.cleaned_data.get("old_password")
+                new_password = password_form.cleaned_data.get("new_password")
+                if UserController.update_password(user, old_password, new_password):
+                    messages.success(request, _("Mot de passe mis à jour avec succès. Veuillez vous reconnecter."))
+                    logout(request)
+                    return redirect("login")
+                else:
+                    password_form.add_error("old_password", _("Ancien mot de passe incorrect."))
 
         if success:
             messages.success(request, _("Modifications enregistrées avec succès."))
@@ -160,5 +174,6 @@ class AccountSettingsView(LoginRequiredMixin, View):
             "profile_form": profile_form,
             "client_form": client_form,
             "delete_form": delete_form,
+            "password_form": password_form,
         }
         return render(request, self.template_name, context)

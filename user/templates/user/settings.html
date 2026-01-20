@@ -36,6 +36,33 @@
                 </form>
             </div>
 
+            <!-- Password Update -->
+            <div class="glass p-8 rounded-3xl border-white/5">
+                <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                    <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    {% trans "Sécurité (Mot de passe)" %}
+                </h2>
+                <form method="POST" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_name" value="password">
+                    {% for field in password_form %}
+                        <div class="space-y-1">
+                            <label class="block text-sm font-medium text-slate-400 ml-1">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<p class="text-red-400 text-xs mt-1 ml-1">{{ field.errors.0 }}</p>{% endif %}
+                        </div>
+                    {% endfor %}
+                    {% if password_form.non_field_errors %}
+                        <p class="text-red-400 text-xs mt-1 ml-1">{{ password_form.non_field_errors.0 }}</p>
+                    {% endif %}
+                    <div class="pt-4">
+                        <button type="submit" class="px-6 py-2 rounded-xl btn-primary text-sm font-bold text-white transition-all">
+                            {% trans "Changer le mot de passe" %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
             <!-- Profile Settings (Pseudo, Avatar) -->
             <div class="glass p-8 rounded-3xl border-white/5">
                 <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-3">

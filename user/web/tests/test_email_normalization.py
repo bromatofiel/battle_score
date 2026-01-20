@@ -3,7 +3,7 @@ from user.models import User
 from user.web.forms import LoginForm, SignupForm, UserUpdateForm
 
 
-class TestEmailNormalization(TestCase):
+class TestUserEmailNormalization(TestCase):
     def test_login_form_normalization(self):
         form = LoginForm(data={"email": "  USER@Example.COM  ", "password": "password123"})
         self.assertTrue(form.is_valid())
