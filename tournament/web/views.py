@@ -1,10 +1,10 @@
 import random
 
+from core.constants import COUNTRIES
 from django.contrib import messages
 from django.shortcuts import redirect
 from tournament.models import Team, Tournament
 from django.views.generic import TemplateView
-from tournament.constants import WORLD_CAPITALS
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.mixins import LoginRequiredMixin
 
@@ -33,7 +33,7 @@ class TournamentCreateView(LoginRequiredMixin, TemplateView):
         )
 
         # Generate initial teams
-        available_names = list(WORLD_CAPITALS)
+        available_names = [capital for _, capital in COUNTRIES]
         random.shuffle(available_names)
 
         for i in range(1, int(nb_teams) + 1):
