@@ -9,6 +9,9 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
+        html {
+            scroll-behavior: smooth;
+        }
         body {
             font-family: 'Outfit', sans-serif;
         }
@@ -135,7 +138,7 @@
         </div>
     </nav>
 
-    <main class="{% if user.is_authenticated %}pb-32 md:pb-0{% endif %}">
+    <main class="pt-32 {% if user.is_authenticated %}pb-32 md:pb-0{% endif %}">
         {% if messages %}
             <div class="fixed top-4 right-4 z-50 flex flex-col gap-2">
                 {% for message in messages %}

@@ -4,16 +4,43 @@
 {% block title %}{% trans "Paramètres du Compte" %}{% endblock %}
 
 {% block content %}
-<div class="pt-24 pb-12 px-6">
-    <div class="max-w-4xl mx-auto">
+<div class="pb-12 px-6">
+    <div class="max-w-[1600px] mx-auto">
         <div class="mb-12">
             <h1 class="text-4xl font-bold text-white mb-2">{% trans "Paramètres" %}</h1>
             <p class="text-slate-400">{% trans "Gérez vos informations personnelles et de facturation." %}</p>
         </div>
 
-        <div class="space-y-8">
-            <!-- Account Settings (Email) -->
-            <div class="glass p-8 rounded-3xl border-white/5 mt-8">
+        <div class="flex flex-col md:flex-row gap-12">
+            <!-- Sidebar (Desktop) -->
+            <aside class="hidden md:block w-72 shrink-0">
+                <nav class="sticky top-32 space-y-2">
+                    <a href="#account" class="flex items-center gap-3 px-6 py-4 rounded-2xl glass text-slate-300 hover:text-white hover:bg-white/5 transition-all group">
+                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        <span class="font-bold text-sm">{% trans "Compte" %}</span>
+                    </a>
+                    <a href="#security" class="flex items-center gap-3 px-6 py-4 rounded-2xl glass text-slate-300 hover:text-white hover:bg-white/5 transition-all group">
+                        <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        <span class="font-bold text-sm">{% trans "Sécurité" %}</span>
+                    </a>
+                    <a href="#profile" class="flex items-center gap-3 px-6 py-4 rounded-2xl glass text-slate-300 hover:text-white hover:bg-white/5 transition-all group">
+                        <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span class="font-bold text-sm">{% trans "Profil Public" %}</span>
+                    </a>
+                    <a href="#billing" class="flex items-center gap-3 px-6 py-4 rounded-2xl glass text-slate-300 hover:text-white hover:bg-white/5 transition-all group">
+                        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                        <span class="font-bold text-sm">{% trans "Facturation" %}</span>
+                    </a>
+                    <a href="#danger" class="flex items-center gap-3 px-6 py-4 rounded-2xl bg-red-500/5 text-red-400 hover:bg-red-500/10 transition-all border border-red-500/10">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <span class="font-bold text-sm">{% trans "Suppression de compte" %}</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <div class="flex-1 space-y-8">
+                <!-- Account Settings (Email) -->
+                <div id="account" class="glass p-8 rounded-3xl border-white/5 scroll-mt-32">
                 <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
                     <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                     {% trans "Compte" %}
@@ -37,7 +64,7 @@
             </div>
 
             <!-- Password Update -->
-            <div class="glass p-8 rounded-3xl border-white/5">
+            <div id="security" class="glass p-8 rounded-3xl border-white/5 scroll-mt-32">
                 <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
                     <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                     {% trans "Sécurité (Mot de passe)" %}
@@ -64,7 +91,7 @@
             </div>
 
             <!-- Profile Settings (Pseudo, Avatar) -->
-            <div class="glass p-8 rounded-3xl border-white/5">
+            <div id="profile" class="glass p-8 rounded-3xl border-white/5 scroll-mt-32">
                 <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
                     <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     {% trans "Profil Public" %}
@@ -88,7 +115,7 @@
             </div>
 
             <!-- Client Settings (Billing) -->
-            <div class="glass p-8 rounded-3xl border-white/5">
+            <div id="billing" class="glass p-8 rounded-3xl border-white/5 scroll-mt-32">
                 <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
                     <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                     {% trans "Informations de Facturation" %}
@@ -111,11 +138,11 @@
                 </form>
             </div>
 
-            <!-- Danger Zone -->
-            <div class="glass p-8 rounded-3xl border-red-500/20 bg-red-500/5">
+            <!-- Account Deletion -->
+            <div id="danger" class="glass p-8 rounded-3xl border-red-500/20 bg-red-500/5 scroll-mt-32">
                 <h2 class="text-xl font-bold text-red-500 mb-6 flex items-center gap-3">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                    {% trans "Zone de Danger" %}
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    {% trans "Suppression de compte" %}
                 </h2>
                 <p class="text-sm text-slate-400 mb-6 leading-relaxed">
                     {% trans "Une fois votre compte supprimé, toutes vos données seront définitivement effacées. Cette action est irréversible." %}
@@ -137,7 +164,7 @@
             </div>
         </div>
 
-        <div class="mt-12 text-center">
+        <div class="mt-12 text-center md:hidden">
             <a href="{% url 'dashboard' %}" class="text-sm font-semibold text-slate-500 hover:text-white transition-colors">
                 ← {% trans "Retour au Tableau de Bord" %}
             </a>
