@@ -6,25 +6,24 @@
 {% block content %}
 <div class="pb-12 px-6">
     <div>
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
-            <div>
-                <h1 class="text-4xl font-bold text-white mb-2">{% trans "Tableau de Bord" %}</h1>
-                <p class="text-slate-400">{% trans "Gérez vos tournois et suivez vos participations." %}</p>
-            </div>
-            <div class="flex gap-4">
-                <a href="{% url 'tournament_create' %}" class="px-6 py-3 rounded-xl btn-primary text-sm font-semibold text-white shadow-lg shadow-blue-500/20">
-                    {% trans "Créer un Tournoi" %}
-                </a>
-            </div>
+        <div class="mb-12">
+            <h1 class="text-4xl font-bold text-white mb-2">{% trans "Tableau de Bord" %}</h1>
+            <p class="text-slate-400">{% trans "Gérez vos tournois et suivez vos participations." %}</p>
         </div>
 
         <div class="grid lg:grid-cols-2 gap-12">
             <!-- Managed Tournaments -->
             <div class="space-y-6">
-                <h2 class="text-xl font-semibold text-white flex items-center gap-3">
-                    <span class="w-2 h-8 rounded-full bg-blue-500"></span>
-                    {% trans "Mes Tournois (Admin)" %}
-                </h2>
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-white flex items-center gap-3">
+                        <span class="w-2 h-8 rounded-full bg-blue-500"></span>
+                        {% trans "Mes Tournois (Admin)" %}
+                    </h2>
+                    <a href="{% url 'tournament_create' %}" class="px-4 py-2 rounded-xl btn-primary text-xs font-bold text-white shadow-lg shadow-blue-500/20 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        <span class="hidden sm:inline">{% trans "Créer un Tournoi" %}</span>
+                    </a>
+                </div>
                 <div class="space-y-4">
                     {% for tournament in managed_tournaments %}
                         <div class="glass p-6 rounded-2xl border-white/5 hover:border-blue-500/30 transition-all group">
@@ -53,10 +52,16 @@
 
             <!-- Participations -->
             <div class="space-y-6">
-                <h2 class="text-xl font-semibold text-white flex items-center gap-3">
-                    <span class="w-2 h-8 rounded-full bg-purple-500"></span>
-                    {% trans "Mes Participations" %}
-                </h2>
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-white flex items-center gap-3">
+                        <span class="w-2 h-8 rounded-full bg-purple-500"></span>
+                        {% trans "Mes Participations" %}
+                    </h2>
+                    <a href="#" class="px-4 py-2 rounded-xl btn-primary text-xs font-bold text-white shadow-lg shadow-blue-500/20 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <span class="hidden sm:inline">{% trans "Rechercher" %}</span>
+                    </a>
+                </div>
                 <div class="space-y-4">
                     {% for participation in participations %}
                         <div class="glass p-6 rounded-2xl border-white/5 hover:border-purple-500/30 transition-all group">

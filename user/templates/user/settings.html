@@ -1,10 +1,17 @@
-{% extends "base.html" %}
+{% extends "base_minimal.html" %}
 {% load i18n %}
 
 {% block title %}{% trans "Paramètres du Compte" %}{% endblock %}
 
 {% block content %}
-<div class="pb-12 px-6">
+<div class="pt-12 sm:pt-24 pb-12 px-6 relative">
+    <!-- Close Button -->
+    <a href="{% url 'dashboard' %}" class="absolute top-4 right-4 sm:top-8 sm:right-8 p-3 rounded-2xl glass text-slate-400 hover:text-white hover:bg-white/5 transition-all group z-10" title="{% trans "Fermer" %}">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+    </a>
+
     <div class="max-w-[1600px] mx-auto">
         <div class="mb-12">
             <h1 class="text-4xl font-bold text-white mb-2">{% trans "Paramètres" %}</h1>
