@@ -1,7 +1,10 @@
+import random
+
 from django.db import models
 from core.utils import enum
 from core.models import BaseModel
 from django.conf import settings
+from core.constants import COUNTRIES
 
 
 class Tournament(BaseModel):
@@ -38,6 +41,19 @@ class Team(BaseModel):
 
     def __str__(self):
         return f"{self.name} ({self.tournament.name})"
+
+    @classmethod
+    def generate_team_names(cls, tournament: Tournament, nb_new_teams: int):
+        current_names = tournament.teams.values_list("name", flat=True)
+        nb_current_teams = len(current_names)
+        current_names = set(current_names)  # Improve performance
+        available_names = [country for country, capital in COUNTRIES if country not in current_names]
+        random.shuffle(available_names)
+        names = []
+        for i in range(nb_new_teams):
+            name = available_names.pop() if available_names else f"Equipe {i + nb_current_teams}"
+            names.append(name)
+        return names
 
 
 class Participant(BaseModel):

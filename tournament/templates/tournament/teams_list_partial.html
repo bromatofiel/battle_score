@@ -1,0 +1,57 @@
+{% load i18n %}
+
+<div id="teams-list" class="glass rounded-3xl border-white/5 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-white/5">
+                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">#</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">{% trans "Nom de l'Équipe" %}</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">{% trans "Membres" %}</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">{% trans "Matchs" %}</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
+                {% for team in teams %}
+                    <tr class="hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                        onclick="window.location='{% url 'tournament:team_detail' tournament.id team.id %}'">
+                        <td class="px-6 py-4">
+                            <span class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-400 group-hover:text-blue-400 transition-colors">
+                                {{ team.number }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="font-bold text-white">{{ team.name }}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex -space-x-2">
+                                {% for member in team.members.all|slice:":3" %}
+                                    <div class="w-8 h-8 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center" title="{{ member.user.username }}">
+                                        <span class="text-[10px] font-bold text-slate-200">{{ member.user.username|slice:":1"|upper }}</span>
+                                    </div>
+                                {% empty %}
+                                    <span class="text-xs text-slate-500 italic">{% trans "Aucun membre" %}</span>
+                                {% endfor %}
+                                {% if team.members.count > 3 %}
+                                    <div class="w-8 h-8 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                                        +{{ team.members.count|add:"-3" }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="font-mono font-bold text-lg text-emerald-400">{{ team.matches.count }}</span>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="px-6 py-12 text-center">
+                            <p class="text-slate-500 text-sm">{% trans "Aucune équipe pour le moment" %}</p>
+                            <p class="text-slate-600 text-xs mt-1">{% trans "Cliquez sur + Équipe pour en créer" %}</p>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
