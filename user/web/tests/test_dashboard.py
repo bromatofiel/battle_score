@@ -24,14 +24,14 @@ class TestDashboardViews(TestCase):
     def test_profile_update(self):
         data = {"form_name": "profile", "pseudo": "new_pseudo"}
         response = self.client.post(reverse("settings"), data)
-        self.assertRedirects(response, reverse("settings"))
+        self.assertRedirects(response, reverse("dashboard"))
         self.user.profile.refresh_from_db()
         self.assertEqual(self.user.profile.pseudo, "new_pseudo")
 
     def test_client_update(self):
         data = {"form_name": "client", "name": "My Corp", "address": "123 Street", "vat_number": "FR123"}
         response = self.client.post(reverse("settings"), data)
-        self.assertRedirects(response, reverse("settings"))
+        self.assertRedirects(response, reverse("dashboard"))
         client = Client.objects.get(user=self.user)
         self.assertEqual(client.name, "My Corp")
 

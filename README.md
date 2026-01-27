@@ -18,6 +18,8 @@ Then run the following commands:
 just update
 # Start serveur
 just start
+# Run tests
+just test
 ```
 
 If you want any custom docker configuration, please use the `docker-compose.override.yml` file (and DON'T try to commit it). Example:

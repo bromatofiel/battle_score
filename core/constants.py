@@ -53,7 +53,7 @@ COUNTRIES = [
     ("Moldavie", "Chisinau"),
     ("Guinee equatoriale", "Ciudad de la Paz"),
     ("Sri Lanka", "Sri Jayawardenapura Kotte"),
-    # ("Honduras", "Comayagüela"),  # Avec Tegucigalpa
+    ("Honduras", "Comayagüela"),  # Avec Tegucigalpa
     ("Guinee", "Conakry"),
     ("Danemark", "Copenhague"),
     ("Bénin", "Porto-Novo"),  # Cotonou
@@ -80,8 +80,8 @@ COUNTRIES = [
     ("Salomon", "Honiara"),
     ("Pakistan", "Islamabad"),
     ("Indonesie", "Jakarta"),
-    ("Israël", "Tel Aviv</tr>"),
-    ("palestine", "Ramallah"),
+    # ("Israël", "Tel Aviv"),  # Trop sensible
+    # ("Palestine", "Ramallah"), # Trop sensible
     ("Afghanistan", "Kaboul"),
     ("Ouganda", "Kampala"),
     ("Nepal", "Katmandou"),
@@ -100,7 +100,7 @@ COUNTRIES = [
     ("Portugal", "Lisbonne"),
     ("Slovénie", "Ljubljana"),
     ("Togo", "Lomé"),
-    ("Royaume uni", "Londres</tr>"),
+    ("Royaume uni", "Londres"),
     ("Angola", "Luanda"),
     ("Zambie", "Lusaka"),
     ("Luxembourg", "Luxembourg"),
@@ -126,7 +126,7 @@ COUNTRIES = [
     ("Bahamas", "Nassau"),
     ("Birmanie", "Naypyidaw"),
     ("Tchad", "N'Djaména"),
-    ("Inde", "New Delhi</tr>"),
+    ("Inde", "New Delhi"),
     ("Niger", "Niamey"),
     ("Chypre", "Nicosie"),
     ("Mauritanie", "Nouakchott"),
@@ -139,7 +139,7 @@ COUNTRIES = [
     ("Panama", "Panama"),
     ("Suriname", "Paramaribo"),
     ("France", "Paris"),
-    # ("Bolivie", "La Paz"),  # Ou Sucre
+    ("Bolivie", "La Paz"),  # Ou Sucre# Trop sensible
     ("Chine", "Pékin"),
     ("Cambodge", "Phnom Penh"),
     ("Papouasie nouvelle guinée", "Port Moresby"),

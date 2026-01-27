@@ -7,6 +7,7 @@ from django.shortcuts import redirect, get_object_or_404
 from tournament.models import Team, Tournament
 from django.views.generic import FormView, TemplateView
 from tournament.web.forms import TournamentForm, TournamentUpdateForm
+from tournament.controllers import get_sport_controller
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.mixins import LoginRequiredMixin
 
@@ -35,7 +36,7 @@ class TournamentCreateView(LoginRequiredMixin, FormView):
         tournament.save()
 
         # Generate initial teams
-        available_names = [capital for _, capital in COUNTRIES]
+        available_names = [country for country, capital in COUNTRIES]
         random.shuffle(available_names)
 
         nb_teams = form.cleaned_data.get("nb_teams")
@@ -101,6 +102,17 @@ class TournamentMatchesView(TournamentBaseView, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["matches"] = self.get_tournament().matches.all()
+        return context
+
+
+class TournamentRankingView(TournamentBaseView, TemplateView):
+    template_name = "tournament/ranking.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        tournament = self.get_tournament()
+        controller = get_sport_controller(tournament.sport)
+        context["rankings"] = controller.get_team_scores(tournament)
         return context
 
 

@@ -81,3 +81,7 @@ Utilisés pour les boutons primaires et les titres mis en avant :
 - **Micro-interactions** : Effet de survol (hover) avec légère mise à l'échelle (`scale-105`) ou changement de luminosité.
 - **Gestion des États** : Utiliser Alpine.js pour les états locaux (modales, menus, steppers) afin d'assurer une réactivité immédiate sans rechargement.
 - **Cohérence** : Toujours utiliser les classes utilitaires Tailwind pré-définies dans `base.html`.
+- **Classements & Podiums** :
+    - **Or (1er)** : Ambre 500 (`#fbbf24`) avec ombre portée légère.
+    - **Argent (2ème)** : Ardoise 400 (`#94a3b8`) / Slate 300.
+    - **Bronze (3ème)** : Ambre 700 (`#b45309`) / Marron chaud.
