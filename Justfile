@@ -42,14 +42,14 @@ add *args:
 
 
 # Model targets
-migrate:
-    {{ DJANGO }} migrate
+migrate *args:
+    {{ DJANGO }} migrate {{ args }}
 
-show:
+showmigrations:
     {{ DJANGO }} showmigrations
 
-migrations:
-    {{ DJANGO }} makemigrations
+makemigrations *args:
+    {{ DJANGO }} makemigrations {{ args }}
 
 # Run tests
 test *args:

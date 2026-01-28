@@ -1,0 +1,170 @@
+{% extends "tournament/tournament_base.html" %}
+{% load i18n %}
+
+{% block title %}{{ tournament.name }} - {% trans "Modifier Match" %} #{{ match.ordering }}{% endblock %}
+
+{% block tournament_content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="flex items-center gap-4">
+        <a href="{% url 'tournament:match_detail' tournament.id match.id %}" class="w-10 h-10 rounded-xl glass border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-1">{% trans "Modifier Match" %} #{{ match.ordering }}</h1>
+            <p class="text-slate-400">{% trans "Modifiez les équipes et les détails du match." %}</p>
+        </div>
+    </div>
+
+    <form method="post" id="match-form" class="space-y-8">
+        {% csrf_token %}
+
+        <!-- Team Selection -->
+        <div class="glass rounded-3xl overflow-hidden border-white/5">
+            <div class="p-6 border-b border-white/5">
+                <h3 class="text-lg font-bold text-white">{% trans "Équipes" %}</h3>
+                <p class="text-sm text-slate-400 mt-1">{% trans "Cliquez pour sélectionner/désélectionner. Minimum 2 équipes requises." %}</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/5 bg-white/5">
+                            <th class="px-6 py-4 text-sm font-bold text-slate-400 uppercase tracking-wider w-12"></th>
+                            <th class="px-6 py-4 text-sm font-bold text-slate-400 uppercase tracking-wider w-16">#</th>
+                            <th class="px-6 py-4 text-sm font-bold text-slate-400 uppercase tracking-wider">{% trans "Nom" %}</th>
+                            <th class="px-6 py-4 text-sm font-bold text-slate-400 uppercase tracking-wider text-center">{% trans "Matchs" %}</th>
+                            <th class="px-6 py-4 text-sm font-bold text-slate-400 uppercase tracking-wider text-center">{% trans "Rang" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        {% for team in teams_data %}
+                        <tr class="team-row group transition-all hover:bg-white/[0.02] cursor-pointer {% if team.selected %}bg-emerald-500/5{% endif %}" data-team-id="{{ team.id }}" onclick="toggleTeam({{ team.id }})">
+                            <td class="px-6 py-4">
+                                <div class="w-6 h-6 rounded-lg border-2 {% if team.selected %}bg-emerald-500 border-emerald-500{% else %}border-slate-600{% endif %} flex items-center justify-center transition-all team-checkbox" id="checkbox-{{ team.id }}">
+                                    <svg class="w-4 h-4 text-white {% if not team.selected %}hidden{% endif %} check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                </div>
+                                <input type="checkbox" name="teams" value="{{ team.id }}" class="hidden team-input" id="input-{{ team.id }}" {% if team.selected %}checked{% endif %}>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="text-slate-500 font-medium">{{ team.number }}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="font-bold text-white group-hover:text-blue-400 transition-colors">{{ team.name }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="text-slate-400">{{ team.match_count }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                {% if team.rank == 1 %}
+                                    <span class="px-2 py-1 rounded-lg bg-amber-500/20 text-amber-500 font-bold text-sm">{{ team.rank }}</span>
+                                {% elif team.rank == 2 %}
+                                    <span class="px-2 py-1 rounded-lg bg-slate-400/20 text-slate-300 font-bold text-sm">{{ team.rank }}</span>
+                                {% elif team.rank == 3 %}
+                                    <span class="px-2 py-1 rounded-lg bg-amber-700/20 text-amber-600 font-bold text-sm">{{ team.rank }}</span>
+                                {% else %}
+                                    <span class="text-slate-500">{{ team.rank }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Match Details -->
+        <div class="glass rounded-3xl p-6 border-white/5 space-y-6">
+            <h3 class="text-lg font-bold text-white">{% trans "Détails du match" %}</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">{% trans "Date et heure" %}</label>
+                    <input type="datetime-local" name="date_start" value="{{ date_start_value }}" class="form-input w-full">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">{% trans "Lieu" %}</label>
+                    <input type="text" name="location" value="{{ match.location }}" placeholder="{% trans 'Ex: Terrain A' %}" class="form-input w-full">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">{% trans "Statut" %}</label>
+                    <select name="status" class="form-input w-full">
+                        <option value="COMING" {% if match.status == 'COMING' %}selected{% endif %}>{% trans "À venir" %}</option>
+                        <option value="ONGOING" {% if match.status == 'ONGOING' %}selected{% endif %}>{% trans "En cours" %}</option>
+                        <option value="DONE" {% if match.status == 'DONE' %}selected{% endif %}>{% trans "Terminé" %}</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-400 mb-2">{% trans "Notes" %}</label>
+                <textarea name="details" rows="2" placeholder="{% trans 'Informations complémentaires...' %}" class="form-input w-full resize-none">{{ match.details }}</textarea>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-between">
+            <form method="post" action="{% url 'tournament:match_delete' tournament.id match.id %}" onsubmit="return confirm('{% trans "Êtes-vous sûr de vouloir supprimer ce match ? Cette action est irréversible." %}');">
+                {% csrf_token %}
+                <button type="submit" class="px-6 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-bold hover:bg-red-500/20 transition-all flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    {% trans "Supprimer" %}
+                </button>
+            </form>
+
+            <div class="flex gap-4">
+                <a href="{% url 'tournament:match_detail' tournament.id match.id %}" class="px-6 py-3 rounded-xl glass border-white/10 text-slate-300 font-bold hover:bg-white/5 transition-all">
+                    {% trans "Annuler" %}
+                </a>
+                <button type="submit" id="submit-btn" class="px-8 py-3 rounded-xl btn-primary text-white font-bold shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    {% trans "Enregistrer" %}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+const selectedTeams = new Set([{% for team in teams_data %}{% if team.selected %}{{ team.id }},{% endif %}{% endfor %}]);
+
+function toggleTeam(teamId) {
+    const checkbox = document.getElementById('checkbox-' + teamId);
+    const input = document.getElementById('input-' + teamId);
+    const row = document.querySelector('[data-team-id="' + teamId + '"]');
+
+    if (selectedTeams.has(teamId)) {
+        selectedTeams.delete(teamId);
+        checkbox.classList.remove('bg-emerald-500', 'border-emerald-500');
+        checkbox.classList.add('border-slate-600');
+        checkbox.querySelector('.check-icon').classList.add('hidden');
+        input.checked = false;
+        row.classList.remove('bg-emerald-500/5');
+    } else {
+        selectedTeams.add(teamId);
+        checkbox.classList.add('bg-emerald-500', 'border-emerald-500');
+        checkbox.classList.remove('border-slate-600');
+        checkbox.querySelector('.check-icon').classList.remove('hidden');
+        input.checked = true;
+        row.classList.add('bg-emerald-500/5');
+    }
+
+    updateSubmitButton();
+}
+
+function updateSubmitButton() {
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = selectedTeams.size < 2;
+}
+
+// Initial check
+updateSubmitButton();
+</script>
+{% endblock %}

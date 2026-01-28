@@ -54,7 +54,7 @@
                     {% for match in matches %}
                         <div class="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] hover:bg-white/5 transition-colors">
                             <span class="text-sm text-white">{% trans "Match" %} #{{ match.ordering }}</span>
-                            <span class="text-xs text-slate-500">{{ match.datetime|date:"d/m/Y H:i"|default:"-" }}</span>
+                            <span class="text-xs text-slate-500">{{ match.date_start|date:"d/m/Y H:i"|default:"-" }}</span>
                         </div>
                     {% endfor %}
                 </div>

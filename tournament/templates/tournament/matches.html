@@ -5,49 +5,125 @@
 
 {% block tournament_content %}
 <div class="space-y-8">
-    <div class="flex justify-between items-center">
-        <div>
-            <h1 class="text-3xl font-bold text-white mb-2">{% trans "Matches et Résultats" %}</h1>
-            <p class="text-slate-400">{% trans "Suivez le déroulement de la compétition." %}</p>
-        </div>
-        <button class="px-6 py-2.5 rounded-xl btn-primary text-sm font-bold text-white shadow-lg shadow-blue-500/20 flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            {% trans "Générer" %}
-        </button>
-    </div>
-
-    <!-- Matches List -->
-    <div class="space-y-4">
-        {% for match in matches %}
-            <div class="glass p-6 rounded-3xl border-white/5 hover:border-emerald-500/20 transition-all group flex items-center gap-8">
-                <div class="w-12 text-center">
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">#{{ match.ordering }}</span>
-                </div>
-                <!-- Team A vs Team B placeholder -->
-                <div class="flex-1 flex justify-between items-center px-12">
-                    <div class="text-right flex-1">
-                        <span class="font-bold text-white text-lg">Équipe A</span>
-                    </div>
-                    <div class="px-8 flex flex-col items-center">
-                        <span class="text-xs font-bold text-slate-500 uppercase">VS</span>
-                        <div class="flex gap-2 mt-2">
-                            <span class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center font-mono font-bold text-xl text-white">0</span>
-                            <span class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center font-mono font-bold text-xl text-white">0</span>
-                        </div>
-                    </div>
-                    <div class="text-left flex-1">
-                        <span class="font-bold text-white text-lg">Équipe B</span>
-                    </div>
-                </div>
-                <button class="px-4 py-2 rounded-xl bg-white/5 text-xs font-bold text-white hover:bg-white/10 transition-colors">
-                    {% trans "Saisir Score" %}
+    {% if can_start_tournament %}
+        <!-- Tournament not started yet -->
+        <div class="glass rounded-3xl p-12 text-center border-dashed border-2 border-emerald-500/30">
+            <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
+                <svg class="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-3">{% trans "Prêt à démarrer ?" %}</h2>
+            <p class="text-slate-400 mb-8 max-w-md mx-auto">{% trans "Démarrez le tournoi pour pouvoir créer des matches et enregistrer les scores." %}</p>
+            <form method="post" action="{% url 'tournament:start' tournament.id %}">
+                {% csrf_token %}
+                <button type="submit" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-lg shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 transition-all flex items-center gap-3 mx-auto">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                    </svg>
+                    {% trans "Démarrer le tournoi" %}
                 </button>
+            </form>
+        </div>
+    {% else %}
+        <!-- Header with controls -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-white mb-2">{% trans "Matches" %}</h1>
+                <p class="text-slate-400">{% trans "Suivez le déroulement de la compétition." %}</p>
             </div>
-        {% empty %}
+
+            {% if is_admin %}
+            <div class="flex items-center gap-4">
+                <!-- Auto-creation toggle -->
+                <div class="flex items-center gap-3 glass rounded-xl px-4 py-2">
+                    <span class="text-sm text-slate-400">{% trans "Création auto" %}</span>
+                    <form id="auto-match-form" method="post" action="{% url 'tournament:set_auto_match' tournament.id 'true' %}">
+                        {% csrf_token %}
+                    </form>
+                    <button type="button" onclick="toggleAutoMatch()" class="relative w-12 h-6 rounded-full transition-colors {% if tournament.auto_match_creation %}bg-emerald-500{% else %}bg-slate-700{% endif %}">
+                        <span class="absolute top-1 {% if tournament.auto_match_creation %}right-1{% else %}left-1{% endif %} w-4 h-4 rounded-full bg-white transition-all"></span>
+                    </button>
+                </div>
+
+                {% if can_create_matches %}
+                <a href="{% url 'tournament:match_create' tournament.id %}" class="px-6 py-2.5 rounded-xl btn-primary text-sm font-bold text-white shadow-lg shadow-blue-500/20 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    {% trans "Créer" %}
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Matches Sections -->
+        {% if not has_matches %}
             <div class="py-12 text-center glass rounded-3xl border-dashed border-white/10">
-                <p class="text-slate-500">{% trans "Les matches n'ont pas encore été générés." %}</p>
+                <svg class="w-12 h-12 mx-auto mb-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                <p class="text-slate-500 mb-4">{% trans "Aucun match créé pour le moment." %}</p>
+                {% if can_create_matches %}
+                <a href="{% url 'tournament:match_create' tournament.id %}" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl btn-primary text-sm font-bold text-white">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    {% trans "Créer le premier match" %}
+                </a>
+                {% endif %}
             </div>
-        {% endfor %}
-    </div>
+        {% else %}
+            <!-- Section: En cours -->
+            {% if matches_ongoing %}
+            <div class="space-y-4">
+                <h3 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    {% trans "En cours" %}
+                </h3>
+                {% for match in matches_ongoing %}
+                    {% include "tournament/_match_card.html" %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Section: À venir -->
+            {% if matches_coming %}
+            <div class="space-y-4">
+                <h3 class="text-lg font-bold text-slate-400">{% trans "À venir" %}</h3>
+                {% for match in matches_coming %}
+                    {% include "tournament/_match_card.html" %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Section: Terminés -->
+            {% if matches_done %}
+            <div class="space-y-4">
+                <h3 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    {% trans "Terminés" %}
+                </h3>
+                {% for match in matches_done %}
+                    {% include "tournament/_match_card.html" %}
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endif %}
+    {% endif %}
 </div>
+
+<script>
+function toggleAutoMatch() {
+    const current = {{ tournament.auto_match_creation|yesno:"true,false" }};
+    const newValue = !current;
+    const form = document.getElementById('auto-match-form');
+    form.action = "{% url 'tournament:set_auto_match' tournament.id 'VALUE' %}".replace('VALUE', newValue);
+    form.submit();
+}
+</script>
 {% endblock %}

@@ -5,8 +5,8 @@ from .models import Team, Match, Score, Classment, Tournament, Participant
 
 @admin.register(Tournament)
 class TournamentAdmin(BaseAdmin):
-    list_display = ("name", "sport", "admin", "nb_teams", "nb_players_per_team", "date_created")
-    list_filter = ("sport", "admin")
+    list_display = ("name", "sport", "admin", "nb_teams", "nb_players_per_team", "auto_match_creation", "status", "date_start", "date_end")
+    list_filter = ("sport", "status", "auto_match_creation")
     search_fields = ("name", "location")
 
 
@@ -26,9 +26,10 @@ class ParticipantAdmin(BaseAdmin):
 
 @admin.register(Match)
 class MatchAdmin(BaseAdmin):
-    list_display = ("tournament", "ordering", "datetime", "date_created")
-    list_filter = ("tournament",)
+    list_display = ("tournament", "ordering", "status", "date_start", "date_end", "date_created")
+    list_filter = ("tournament", "status")
     ordering = ("tournament", "ordering")
+    search_field = ("tournament__name", "teams__name", "location", "details")
 
 
 @admin.register(Score)

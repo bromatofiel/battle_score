@@ -17,13 +17,23 @@ class Tournament(BaseModel):
         GENERIC=("GENERIC", "Générique"),
     )
 
+    STATUSES = enum(
+        DRAFT=("DRAFT", "Brouillon"),
+        PUBLISHED=("PUBLISHED", "Publié"),
+        ONGOING=("ONGOING", "En cours"),
+        FINISHED=("FINISHED", "Terminé"),
+    )
+
+    auto_match_creation = models.BooleanField(default=True)
     name = models.CharField(max_length=255)
     sport = models.CharField(max_length=20, choices=SPORTS, default=SPORTS.GENERIC)
     description = models.TextField(blank=True)
     nb_teams = models.PositiveIntegerField(default=5)
     nb_players_per_team = models.PositiveIntegerField(default=4)
     location = models.CharField(max_length=255, blank=True)
-    datetime = models.DateTimeField(null=True, blank=True)
+    date_start = models.DateTimeField(null=True, blank=True)
+    date_end = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUSES, default=STATUSES.DRAFT)
     admin = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="managed_tournaments")
 
     def __str__(self):
@@ -83,10 +93,20 @@ class Match(BaseModel):
     A match between two teams.
     """
 
-    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, related_name="matches")
-    teams = models.ManyToManyField(Team, related_name="matches")
+    STATUSES = enum(
+        COMING=("COMING", "À venir"),
+        ONGOING=("ONGOING", "En cours"),
+        DONE=("DONE", "Terminé"),
+    )
+
+    date_end = models.DateTimeField(null=True, blank=True)
+    date_start = models.DateTimeField(null=True, blank=True)
+    details = models.TextField(blank=True)
+    location = models.CharField(max_length=255, blank=True)
     ordering = models.PositiveIntegerField(default=0)
-    datetime = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUSES, default=STATUSES.COMING)
+    teams = models.ManyToManyField(Team, related_name="matches")
+    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, related_name="matches")
 
     class Meta:
         ordering = ["ordering"]

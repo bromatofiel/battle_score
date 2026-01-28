@@ -29,13 +29,13 @@ class TournamentForm(forms.ModelForm):
             from django.utils import timezone
 
             combined_datetime = timezone.make_aware(datetime.datetime.combine(date, time))
-            cleaned_data["datetime"] = combined_datetime
+            cleaned_data["date_start"] = combined_datetime
 
         return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        instance.datetime = self.cleaned_data.get("datetime")
+        instance.date_start = self.cleaned_data.get("date_start")
         if commit:
             instance.save()
         return instance
@@ -68,13 +68,13 @@ class TournamentUpdateForm(forms.ModelForm):
             from django.utils import timezone
 
             combined_datetime = timezone.make_aware(datetime.datetime.combine(date, time))
-            cleaned_data["datetime"] = combined_datetime
+            cleaned_data["date_start"] = combined_datetime
         return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        if "datetime" in self.cleaned_data:
-            instance.datetime = self.cleaned_data.get("datetime")
+        if "date_start" in self.cleaned_data:
+            instance.date_start = self.cleaned_data.get("date_start")
         if commit:
             instance.save()
         return instance

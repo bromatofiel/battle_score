@@ -1,9 +1,12 @@
 from django.db import transaction
+from django.http import HttpResponseForbidden
 from django.urls import reverse_lazy
+from django.utils import timezone
+from django.views import View
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.shortcuts import redirect, get_object_or_404
-from tournament.models import Team, Tournament
+from tournament.models import Team, Match, Tournament
 from django.views.generic import FormView, DeleteView, UpdateView, TemplateView
 from tournament.web.forms import TeamForm, TournamentForm, TournamentUpdateForm
 from tournament.controllers import get_sport_controller
@@ -78,11 +81,26 @@ class TournamentBaseView(LoginRequiredMixin):
         """Check if user can delete a team (admin only)."""
         return self.is_tournament_admin(request)
 
+    def can_start_tournament(self):
+        """Check if tournament can be started (DRAFT or PUBLISHED only)."""
+        tournament = self.get_tournament()
+        return self.is_tournament_admin() and tournament.status in [
+            Tournament.STATUSES.DRAFT,
+            Tournament.STATUSES.PUBLISHED,
+        ]
+
+    def can_create_matches(self):
+        """Check if matches can be created (ONGOING status only)."""
+        tournament = self.get_tournament()
+        return self.is_tournament_admin() and tournament.status == Tournament.STATUSES.ONGOING
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         tournament = self.get_tournament()
         context["tournament"] = tournament
         context["is_admin"] = self.is_tournament_admin()
+        context["can_start_tournament"] = self.can_start_tournament()
+        context["can_create_matches"] = self.can_create_matches()
 
         # Next 5 tournaments (admin or participant, excluding current)
         next_tournaments = (
@@ -120,7 +138,18 @@ class TournamentMatchesView(TournamentBaseView, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["matches"] = self.get_tournament().matches.all()
+        tournament = self.get_tournament()
+        base_qs = tournament.matches.prefetch_related("teams", "scores__team")
+
+        # Split matches into 3 sections, ordered by reverse creation
+        matches_ongoing = base_qs.filter(status=Match.STATUSES.ONGOING).order_by("-date_created")
+        matches_coming = base_qs.filter(status=Match.STATUSES.COMING).order_by("-date_created")
+        matches_done = base_qs.filter(status=Match.STATUSES.DONE).order_by("-date_created")
+
+        context["matches_ongoing"] = matches_ongoing
+        context["matches_coming"] = matches_coming
+        context["matches_done"] = matches_done
+        context["has_matches"] = matches_ongoing.exists() or matches_coming.exists() or matches_done.exists()
         return context
 
 
@@ -290,3 +319,234 @@ class TeamDeleteView(TournamentBaseView, DeleteView):
 
         messages.success(request, _("Équipe supprimée."))
         return redirect("tournament:teams", tournament_id=tournament.id)
+
+
+class TournamentStartView(TournamentBaseView, View):
+    """Start a tournament by changing its status to ONGOING."""
+
+    def post(self, request, *args, **kwargs):
+        if not self.can_start_tournament():
+            return HttpResponseForbidden(_("Vous ne pouvez pas démarrer ce tournoi."))
+
+        tournament = self.get_tournament()
+        tournament.status = Tournament.STATUSES.ONGOING
+        tournament.date_start = timezone.now()
+        tournament.save()
+        messages.success(request, _("Le tournoi a démarré !"))
+        return redirect("tournament:matches", tournament_id=tournament.id)
+
+
+class SetAutoMatchCreationView(TournamentBaseView, View):
+    """Set auto_match_creation setting for tournament."""
+
+    def post(self, request, *args, **kwargs):
+        if not self.is_tournament_admin():
+            return HttpResponseForbidden(_("Seul l'administrateur peut modifier ce paramètre."))
+
+        value = kwargs.get("value", "").lower()
+        tournament = self.get_tournament()
+        tournament.auto_match_creation = value == "true"
+        tournament.save()
+        return redirect("tournament:matches", tournament_id=tournament.id)
+
+
+class MatchCreateView(TournamentBaseView, TemplateView):
+    """View for creating a new match with team selection."""
+
+    template_name = "tournament/match_create.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        tournament = self.get_tournament()
+        controller = get_sport_controller(tournament.sport)
+        rankings = controller.get_team_scores(tournament)
+
+        # Build a map of team_id to rank and points
+        ranking_map = {r["team"].id: {"rank": r["rank"], "points": r["total_points"]} for r in rankings}
+
+        # Get teams with match count and ranking info
+        teams = tournament.teams.annotate(match_count=Count("matches")).order_by("number")
+
+        teams_data = []
+        for team in teams:
+            team_info = {
+                "id": team.id,
+                "number": team.number,
+                "name": team.name,
+                "match_count": team.match_count,
+                "rank": ranking_map.get(team.id, {}).get("rank", "-"),
+                "points": ranking_map.get(team.id, {}).get("points", 0),
+            }
+            teams_data.append(team_info)
+
+        context["teams_data"] = teams_data
+        context["default_datetime"] = timezone.now().strftime("%Y-%m-%dT%H:%M")
+        return context
+
+    def post(self, request, *args, **kwargs):
+        if not self.can_create_matches():
+            return HttpResponseForbidden(_("Vous ne pouvez pas créer de match."))
+
+        tournament = self.get_tournament()
+        selected_team_ids = request.POST.getlist("teams")
+
+        if len(selected_team_ids) < 2:
+            messages.error(request, _("Sélectionnez au moins 2 équipes."))
+            return redirect("tournament:match_create", tournament_id=tournament.id)
+
+        # Parse date_start
+        date_start_str = request.POST.get("date_start", "")
+        date_start = None
+        if date_start_str:
+            try:
+                from django.utils.dateparse import parse_datetime
+
+                date_start = parse_datetime(date_start_str)
+                if date_start and timezone.is_naive(date_start):
+                    date_start = timezone.make_aware(date_start)
+            except (ValueError, TypeError):
+                date_start = timezone.now()
+        else:
+            date_start = timezone.now()
+
+        # Get next ordering number
+        last_match = tournament.matches.order_by("-ordering").first()
+        next_ordering = (last_match.ordering + 1) if last_match else 1
+
+        # Create the match
+        match = Match.objects.create(
+            tournament=tournament,
+            ordering=next_ordering,
+            date_start=date_start,
+            location=request.POST.get("location", ""),
+            details=request.POST.get("details", ""),
+            status=Match.STATUSES.COMING,
+        )
+
+        # Add teams to the match
+        teams = Team.objects.filter(id__in=selected_team_ids, tournament=tournament)
+        match.teams.set(teams)
+
+        messages.success(request, _("Match créé avec succès."))
+        return redirect("tournament:matches", tournament_id=tournament.id)
+
+
+class MatchDetailView(TournamentBaseView, TemplateView):
+    """View for displaying match details."""
+
+    template_name = "tournament/match_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        match = get_object_or_404(Match, id=self.kwargs.get("match_id"), tournament=self.get_tournament())
+        context["match"] = match
+        context["match_teams"] = match.teams.all()
+        context["scores"] = match.scores.select_related("team").all()
+        return context
+
+
+class MatchUpdateView(TournamentBaseView, TemplateView):
+    """View for updating match details (admin only)."""
+
+    template_name = "tournament/match_update.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.kwargs = kwargs
+        if not self.is_tournament_admin():
+            return HttpResponseForbidden(_("Seul l'administrateur peut modifier un match."))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_match(self):
+        return get_object_or_404(Match, id=self.kwargs.get("match_id"), tournament=self.get_tournament())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        match = self.get_match()
+        context["match"] = match
+        context["match_teams"] = match.teams.all()
+
+        # Build team selection data like in MatchCreateView
+        tournament = self.get_tournament()
+        controller = get_sport_controller(tournament.sport)
+        rankings = controller.get_team_scores(tournament)
+        ranking_map = {r["team"].id: {"rank": r["rank"], "points": r["total_points"]} for r in rankings}
+
+        teams = tournament.teams.annotate(match_count=Count("matches")).order_by("number")
+        teams_data = []
+        for team in teams:
+            team_info = {
+                "id": team.id,
+                "number": team.number,
+                "name": team.name,
+                "match_count": team.match_count,
+                "rank": ranking_map.get(team.id, {}).get("rank", "-"),
+                "points": ranking_map.get(team.id, {}).get("points", 0),
+                "selected": team in match.teams.all(),
+            }
+            teams_data.append(team_info)
+
+        context["teams_data"] = teams_data
+        context["date_start_value"] = match.date_start.strftime("%Y-%m-%dT%H:%M") if match.date_start else ""
+        return context
+
+    def post(self, request, *args, **kwargs):
+        match = self.get_match()
+        tournament = self.get_tournament()
+        selected_team_ids = request.POST.getlist("teams")
+
+        if len(selected_team_ids) < 2:
+            messages.error(request, _("Sélectionnez au moins 2 équipes."))
+            return redirect("tournament:match_update", tournament_id=tournament.id, match_id=match.id)
+
+        # Parse date_start
+        date_start_str = request.POST.get("date_start", "")
+        if date_start_str:
+            try:
+                from django.utils.dateparse import parse_datetime
+
+                date_start = parse_datetime(date_start_str)
+                if date_start and timezone.is_naive(date_start):
+                    date_start = timezone.make_aware(date_start)
+                match.date_start = date_start
+            except (ValueError, TypeError):
+                pass
+
+        match.location = request.POST.get("location", "")
+        match.details = request.POST.get("details", "")
+
+        # Update status
+        new_status = request.POST.get("status")
+        if new_status and new_status in dict(Match.STATUSES):
+            match.status = new_status
+
+        match.save()
+
+        # Update teams
+        teams = Team.objects.filter(id__in=selected_team_ids, tournament=tournament)
+        match.teams.set(teams)
+
+        messages.success(request, _("Match mis à jour."))
+        return redirect("tournament:match_detail", tournament_id=tournament.id, match_id=match.id)
+
+
+class MatchDeleteView(TournamentBaseView, View):
+    """Delete a match (admin only)."""
+
+    def post(self, request, *args, **kwargs):
+        if not self.is_tournament_admin():
+            return HttpResponseForbidden(_("Seul l'administrateur peut supprimer un match."))
+
+        tournament = self.get_tournament()
+        match = get_object_or_404(Match, id=kwargs.get("match_id"), tournament=tournament)
+
+        with transaction.atomic():
+            match.delete()
+            # Renumber matches to close gaps
+            matches = tournament.matches.all().order_by("ordering")
+            for i, m in enumerate(matches, start=1):
+                if m.ordering != i:
+                    m.ordering = i
+                    m.save()
+
+        messages.success(request, _("Match supprimé."))
+        return redirect("tournament:matches", tournament_id=tournament.id)
