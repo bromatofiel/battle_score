@@ -6,7 +6,7 @@ from django.views import View
 from django.contrib import messages
 from django.db.models import Q, Count
 from django.shortcuts import redirect, get_object_or_404
-from tournament.models import Team, Match, Tournament
+from tournament.models import Team, Match, Score, Tournament
 from django.views.generic import FormView, DeleteView, UpdateView, TemplateView
 from tournament.web.forms import TeamForm, TournamentForm, TournamentUpdateForm
 from tournament.controllers import get_sport_controller
@@ -599,3 +599,33 @@ class MatchDeleteView(TournamentBaseView, View):
 
         messages.success(request, _("Match supprimé."))
         return redirect("tournament:matches", tournament_id=tournament.id)
+
+
+class ScoreUpdateView(TournamentBaseView, View):
+    """Update scores for a match (admin only)."""
+
+    def post(self, request, *args, **kwargs):
+        if not self.is_tournament_admin():
+            return HttpResponseForbidden(_("Seul l'administrateur peut modifier les scores."))
+
+        tournament = self.get_tournament()
+        match = get_object_or_404(Match, id=kwargs.get("match_id"), tournament=tournament)
+
+        # Process scores for each team in the match
+        for team in match.teams.all():
+            score_key = f"score_{team.id}"
+            score_value = request.POST.get(score_key, "").strip()
+
+            if score_value:
+                try:
+                    value = int(score_value)
+                    # Create or update Score
+                    Score.objects.update_or_create(match=match, team=team, defaults={"value": value})
+                except ValueError:
+                    pass  # Skip invalid values
+            else:
+                # If empty, delete the score if it exists
+                Score.objects.filter(match=match, team=team).delete()
+
+        messages.success(request, _("Scores mis à jour."))
+        return redirect("tournament:match_detail", tournament_id=tournament.id, match_id=match.id)

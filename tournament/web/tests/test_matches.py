@@ -76,3 +76,54 @@ class MatchListTest(TestCase):
         self.assertEqual(coming_matches[0], match3)
         self.assertEqual(coming_matches[1], match2)
         self.assertEqual(coming_matches[2], match1)
+
+
+class ScoreUpdateTest(TestCase):
+    """Tests for score update functionality."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(username="admin", email="admin@score.test", password="password")
+        self.non_admin = User.objects.create_user(username="user", email="user@score.test", password="password")
+        self.tournament = Tournament.objects.create(name="Score Tournament", admin=self.admin, status=Tournament.STATUSES.ONGOING)
+        from tournament.models import Team
+
+        self.team1 = Team.objects.create(tournament=self.tournament, name="Team A", number=1)
+        self.team2 = Team.objects.create(tournament=self.tournament, name="Team B", number=2)
+        self.match = Match.objects.create(tournament=self.tournament, ordering=1, status=Match.STATUSES.ONGOING)
+        self.match.teams.set([self.team1, self.team2])
+
+    def test_admin_can_update_scores(self):
+        """Admin should be able to create/update scores."""
+        self.client.force_login(self.admin)
+
+        url = reverse("tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id})
+        response = self.client.post(url, {f"score_{self.team1.id}": "10", f"score_{self.team2.id}": "5"})
+
+        self.assertEqual(response.status_code, 302)
+        from tournament.models import Score
+
+        self.assertEqual(Score.objects.filter(match=self.match).count(), 2)
+        self.assertEqual(Score.objects.get(match=self.match, team=self.team1).value, 10)
+        self.assertEqual(Score.objects.get(match=self.match, team=self.team2).value, 5)
+
+    def test_non_admin_cannot_update_scores(self):
+        """Non-admin should get 403 when updating scores."""
+        self.client.force_login(self.non_admin)
+
+        url = reverse("tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id})
+        response = self.client.post(url, {f"score_{self.team1.id}": "10"})
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_empty_score_deletes_existing(self):
+        """Empty score value should delete existing score."""
+        from tournament.models import Score
+
+        Score.objects.create(match=self.match, team=self.team1, value=10)
+        self.client.force_login(self.admin)
+
+        url = reverse("tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id})
+        response = self.client.post(url, {f"score_{self.team1.id}": ""})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Score.objects.filter(match=self.match, team=self.team1).count(), 0)

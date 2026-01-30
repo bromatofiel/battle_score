@@ -25,6 +25,9 @@ start-d:
 stop:
     {{ COMPOSE }} down
 
+attach:
+    docker attach {{ CONTAINER_SERVER }}
+
 # Force rebuild of development images
 update:
     {{ COMPOSE }} build --no-cache
