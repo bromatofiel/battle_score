@@ -35,14 +35,22 @@
             </div>
 
             {% if is_admin %}
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4 flex-wrap">
+                <!-- Nb matches per team input -->
+                <form method="post" action="{% url 'tournament:set_nb_team_matches' tournament.id %}" class="flex items-center gap-2 glass rounded-xl px-4 py-2">
+                    {% csrf_token %}
+                    <label class="text-sm text-slate-400 whitespace-nowrap">{% trans "Matchs/équipe" %}</label>
+                    <input type="number" name="nb_team_matches" value="{{ tournament.nb_team_matches|default:'' }}" min="1" max="100" placeholder="-" class="w-16 px-2 py-1 rounded-lg bg-slate-800 border border-slate-600 text-white text-center text-sm focus:border-blue-500 focus:outline-none">
+                    <button type="submit" class="text-blue-400 hover:text-blue-300 text-sm font-medium">{% trans "OK" %}</button>
+                </form>
+
                 <!-- Auto-creation toggle -->
                 <div class="flex items-center gap-3 glass rounded-xl px-4 py-2">
                     <span class="text-sm text-slate-400">{% trans "Création auto" %}</span>
                     <form id="auto-match-form" method="post" action="{% url 'tournament:set_auto_match' tournament.id 'true' %}">
                         {% csrf_token %}
                     </form>
-                    <button type="button" onclick="toggleAutoMatch()" class="relative w-12 h-6 rounded-full transition-colors {% if tournament.auto_match_creation %}bg-emerald-500{% else %}bg-slate-700{% endif %}">
+                    <button type="button" onclick="toggleAutoMatch()" class="relative w-12 h-6 rounded-full transition-colors {% if tournament.auto_match_creation %}bg-emerald-500{% else %}bg-slate-700{% endif %} {% if not tournament.nb_team_matches %}opacity-50 cursor-not-allowed{% endif %}" {% if not tournament.nb_team_matches %}disabled title="{% trans 'Définissez d\'abord le nombre de matchs par équipe' %}"{% endif %}>
                         <span class="absolute top-1 {% if tournament.auto_match_creation %}right-1{% else %}left-1{% endif %} w-4 h-4 rounded-full bg-white transition-all"></span>
                     </button>
                 </div>
@@ -119,6 +127,10 @@
 
 <script>
 function toggleAutoMatch() {
+    {% if not tournament.nb_team_matches %}
+    alert("Définissez d'abord le nombre de matchs par équipe.");
+    return;
+    {% endif %}
     const current = {{ tournament.auto_match_creation|yesno:"true,false" }};
     const newValue = !current;
     const form = document.getElementById('auto-match-form');

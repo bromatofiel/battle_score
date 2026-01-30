@@ -1,0 +1,34 @@
+<a href="{% url 'tournament:match_detail' tournament.id match.id %}" class="glass p-6 rounded-3xl border-white/5 hover:border-emerald-500/20 transition-all group block">
+    <div class="flex flex-col items-center">
+        <!-- Match number -->
+        <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">#{{ match.ordering }}</div>
+
+        <!-- Teams horizontal display with VS and scores -->
+        <div class="flex items-center justify-center gap-4 md:gap-8 flex-wrap">
+            {% for team in match.teams.all %}
+                {% if not forloop.first %}
+                    <span class="text-xl font-bold text-slate-600">VS</span>
+                {% endif %}
+                <div class="flex flex-col items-center min-w-[100px]">
+                    <span class="font-bold text-white text-lg group-hover:text-blue-400 transition-colors text-center">{{ team.name }}</span>
+                    {% for score in match.scores.all %}
+                        {% if score.team_id == team.id %}
+                            <span class="mt-2 w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center font-mono font-bold text-2xl text-white">{{ score.value }}</span>
+                        {% endif %}
+                    {% empty %}
+                        <span class="mt-2 w-12 h-12 rounded-xl bg-slate-800/50 flex items-center justify-center font-mono font-bold text-2xl text-slate-500">-</span>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Date and location -->
+        {% if match.date_start or match.location %}
+        <div class="mt-4 text-xs text-slate-500 text-center">
+            {% if match.date_start %}{{ match.date_start|date:"d/m H:i" }}{% endif %}
+            {% if match.date_start and match.location %} • {% endif %}
+            {% if match.location %}{{ match.location }}{% endif %}
+        </div>
+        {% endif %}
+    </div>
+</a>

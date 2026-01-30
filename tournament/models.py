@@ -24,7 +24,8 @@ class Tournament(BaseModel):
         FINISHED=("FINISHED", "Terminé"),
     )
 
-    auto_match_creation = models.BooleanField(default=True)
+    auto_match_creation = models.BooleanField(default=False)
+    nb_team_matches = models.PositiveIntegerField(null=True, blank=True, help_text="Max matches per team for auto-creation")
     name = models.CharField(max_length=255)
     sport = models.CharField(max_length=20, choices=SPORTS, default=SPORTS.GENERIC)
     description = models.TextField(blank=True)

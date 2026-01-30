@@ -332,6 +332,14 @@ class TournamentStartView(TournamentBaseView, View):
         tournament.status = Tournament.STATUSES.ONGOING
         tournament.date_start = timezone.now()
         tournament.save()
+
+        # Auto-create first matches if enabled
+        if tournament.auto_match_creation and tournament.nb_team_matches:
+            controller = get_sport_controller(tournament.sport)
+            created = controller.create_next_matches(tournament)
+            if created:
+                messages.info(request, _("%(count)d match(s) créé(s) automatiquement.") % {"count": len(created)})
+
         messages.success(request, _("Le tournoi a démarré !"))
         return redirect("tournament:matches", tournament_id=tournament.id)
 
@@ -345,7 +353,38 @@ class SetAutoMatchCreationView(TournamentBaseView, View):
 
         value = kwargs.get("value", "").lower()
         tournament = self.get_tournament()
+
+        # Can only enable if nb_team_matches is set
+        if value == "true" and not tournament.nb_team_matches:
+            messages.error(request, _("Définissez d'abord le nombre de matchs par équipe."))
+            return redirect("tournament:matches", tournament_id=tournament.id)
+
         tournament.auto_match_creation = value == "true"
+        tournament.save()
+        return redirect("tournament:matches", tournament_id=tournament.id)
+
+
+class SetNbTeamMatchesView(TournamentBaseView, View):
+    """Set nb_team_matches setting for tournament."""
+
+    def post(self, request, *args, **kwargs):
+        if not self.is_tournament_admin():
+            return HttpResponseForbidden(_("Seul l'administrateur peut modifier ce paramètre."))
+
+        tournament = self.get_tournament()
+        value = request.POST.get("nb_team_matches", "").strip()
+
+        if value:
+            try:
+                tournament.nb_team_matches = int(value)
+            except ValueError:
+                messages.error(request, _("Valeur invalide."))
+                return redirect("tournament:matches", tournament_id=tournament.id)
+        else:
+            tournament.nb_team_matches = None
+            # Disable auto if no limit set
+            tournament.auto_match_creation = False
+
         tournament.save()
         return redirect("tournament:matches", tournament_id=tournament.id)
 
@@ -514,9 +553,11 @@ class MatchUpdateView(TournamentBaseView, TemplateView):
         match.location = request.POST.get("location", "")
         match.details = request.POST.get("details", "")
 
-        # Update status
+        # Track if status is changing to DONE
+        old_status = match.status
         new_status = request.POST.get("status")
-        if new_status and new_status in dict(Match.STATUSES):
+        valid_statuses = [s[0] for s in Match.STATUSES]
+        if new_status and new_status in valid_statuses:
             match.status = new_status
 
         match.save()
@@ -524,6 +565,14 @@ class MatchUpdateView(TournamentBaseView, TemplateView):
         # Update teams
         teams = Team.objects.filter(id__in=selected_team_ids, tournament=tournament)
         match.teams.set(teams)
+
+        # Auto-create next matches if match just finished
+        if old_status != Match.STATUSES.DONE and match.status == Match.STATUSES.DONE:
+            if tournament.auto_match_creation and tournament.nb_team_matches:
+                controller = get_sport_controller(tournament.sport)
+                created = controller.create_next_matches(tournament)
+                if created:
+                    messages.info(request, _("%(count)d match(s) créé(s) automatiquement.") % {"count": len(created)})
 
         messages.success(request, _("Match mis à jour."))
         return redirect("tournament:match_detail", tournament_id=tournament.id, match_id=match.id)
