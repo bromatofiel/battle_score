@@ -1,4 +1,5 @@
 from django.test import TestCase
+
 from user.models import User
 from tournament.models import Team, Match, Score, Tournament
 from tournament.controllers import get_sport_controller
@@ -7,7 +8,9 @@ from tournament.controllers import get_sport_controller
 class TestRankingCalculations(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(email="admin@test.py", password="password", username="admin@test.py")
-        self.tournament = Tournament.objects.create(name="Test Tournament", admin=self.user, sport=Tournament.SPORTS.GENERIC)
+        self.tournament = Tournament.objects.create(
+            name="Test Tournament", admin=self.user, sport=Tournament.SPORTS.GENERIC
+        )
         self.team1 = Team.objects.create(tournament=self.tournament, name="Team 1", number=1)
         self.team2 = Team.objects.create(tournament=self.tournament, name="Team 2", number=2)
         self.team3 = Team.objects.create(tournament=self.tournament, name="Team 3", number=3)
@@ -103,3 +106,79 @@ class TestRankingCalculations(TestCase):
         self.assertEqual(ranking_map[self.team1.id], 1)
         self.assertEqual(ranking_map[self.team3.id], 1)
         self.assertEqual(ranking_map[self.team2.id], 3)
+
+
+class TestCreateNextMatches(TestCase):
+    """Tests for BaseSportController.create_next_matches."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(email="admin@test.py", password="password", username="admin@test.py")
+        self.tournament = Tournament.objects.create(
+            name="Test Tournament",
+            admin=self.user,
+            sport=Tournament.SPORTS.GENERIC,
+            status=Tournament.STATUSES.ONGOING,
+        )
+        self.team1 = Team.objects.create(tournament=self.tournament, name="Team 1", number=1)
+        self.team2 = Team.objects.create(tournament=self.tournament, name="Team 2", number=2)
+        self.team3 = Team.objects.create(tournament=self.tournament, name="Team 3", number=3)
+        self.controller = get_sport_controller(Tournament.SPORTS.GENERIC)
+
+    def test_no_matches_created_if_auto_disabled(self):
+        """No matches should be created if auto_match_creation is False."""
+        self.tournament.auto_match_creation = False
+        self.tournament.nb_team_matches = 3
+        self.tournament.save()
+
+        created = self.controller.create_next_matches(self.tournament)
+        self.assertEqual(created, [])
+
+    def test_no_matches_created_if_nb_team_matches_not_set(self):
+        """No matches should be created if nb_team_matches is not set."""
+        self.tournament.auto_match_creation = True
+        self.tournament.nb_team_matches = None
+        self.tournament.save()
+
+        created = self.controller.create_next_matches(self.tournament)
+        self.assertEqual(created, [])
+
+    def test_creates_matches_when_enabled(self):
+        """Matches should be created when auto generation is enabled."""
+        self.tournament.auto_match_creation = True
+        self.tournament.nb_team_matches = 2
+        self.tournament.save()
+
+        created = self.controller.create_next_matches(self.tournament)
+        self.assertGreater(len(created), 0)
+        self.assertEqual(Match.objects.filter(tournament=self.tournament).count(), len(created))
+
+    def test_respects_nb_team_matches_limit(self):
+        """Should not create more matches than nb_team_matches per team."""
+        self.tournament.auto_match_creation = True
+        self.tournament.nb_team_matches = 1
+        self.tournament.save()
+
+        # First, create initial matches
+        created = self.controller.create_next_matches(self.tournament, update_match_statuses=False)
+
+        # Mark all as done
+        for match in created:
+            match.status = Match.STATUSES.DONE
+            match.save()
+
+        # Try to create more matches - should not create any since each team has 1 match
+        more_created = self.controller.create_next_matches(self.tournament)
+        self.assertEqual(more_created, [])
+
+    def test_does_not_create_matches_for_busy_teams(self):
+        """Teams with pending matches should not get new matches."""
+        self.tournament.auto_match_creation = True
+        self.tournament.nb_team_matches = 3
+        self.tournament.save()
+
+        # Create first batch of matches
+        created = self.controller.create_next_matches(self.tournament, update_match_statuses=False)
+
+        # All teams should now have pending matches, so no new matches should be created
+        more_created = self.controller.create_next_matches(self.tournament)
+        self.assertEqual(more_created, [])
