@@ -1,0 +1,12 @@
+{% comment %}Compact card for coming matches: just match number and team names{% endcomment %}
+<a href="{% url 'tournament:match_detail' tournament.id match.id %}" class="glass px-4 py-3 rounded-xl border-white/5 hover:border-blue-500/30 transition-all group flex items-center gap-3">
+    <span class="text-xs font-bold text-slate-500 w-8">#{{ match.ordering }}</span>
+    <div class="flex items-center gap-2 flex-wrap flex-1">
+        {% for team in match.teams.all %}
+            {% if not forloop.first %}
+                <span class="text-xs text-slate-600">vs</span>
+            {% endif %}
+            <span class="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">{{ team.name }}</span>
+        {% endfor %}
+    </div>
+</a>

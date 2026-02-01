@@ -1,0 +1,23 @@
+{% comment %}Compact card for done matches: match number, teams with scores{% endcomment %}
+<a href="{% url 'tournament:match_detail' tournament.id match.id %}" class="glass px-4 py-3 rounded-xl border-white/5 hover:border-emerald-500/30 transition-all group flex items-center gap-3">
+    <span class="text-xs font-bold text-slate-500 w-8">#{{ match.ordering }}</span>
+    <div class="flex items-center gap-2 flex-wrap flex-1">
+        {% for team in match.teams.all %}
+            {% if not forloop.first %}
+                <span class="text-xs text-slate-600">-</span>
+            {% endif %}
+            <div class="flex items-center gap-1.5">
+                {% with team_score=None %}
+                    {% for score in match.scores.all %}
+                        {% if score.team_id == team.id %}
+                            <span class="text-sm font-medium {% if score.is_winner %}text-emerald-400 font-bold{% else %}text-slate-400{% endif %} group-hover:text-blue-400 transition-colors">{{ team.name }}</span>
+                            <span class="text-xs font-bold {% if score.is_winner %}bg-emerald-500/30 text-emerald-300{% else %}bg-slate-800 text-slate-400{% endif %} px-1.5 py-0.5 rounded">{{ score.value }}</span>
+                        {% endif %}
+                    {% empty %}
+                        <span class="text-sm font-medium text-slate-400">{{ team.name }}</span>
+                    {% endfor %}
+                {% endwith %}
+            </div>
+        {% endfor %}
+    </div>
+</a>
