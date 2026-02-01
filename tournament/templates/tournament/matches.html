@@ -92,7 +92,9 @@
             {% if matches_ongoing %}
             <div class="space-y-4">
                 <h3 class="text-lg font-bold text-amber-400 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
                     {% trans "En cours" %}
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -106,7 +108,12 @@
             <!-- Section: À venir -->
             {% if matches_coming %}
             <div class="space-y-2">
-                <h3 class="text-lg font-bold text-slate-400">{% trans "À venir" %}</h3>
+                <h3 class="text-lg font-bold text-slate-400 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    {% trans "À venir" %}
+                </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {% for match in matches_coming %}
                         {% include "tournament/_match_card_coming.html" %}

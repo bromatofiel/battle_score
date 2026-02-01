@@ -40,7 +40,37 @@
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            <span class="font-mono font-bold text-lg text-emerald-400">{{ team.matches.count }}</span>
+                            <div class="flex items-center gap-2 text-sm">
+                                {% if team.matches_done %}
+                                    <span class="flex items-center gap-1 text-emerald-400" title="{% trans 'Terminés' %}">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                        <span class="font-bold">{{ team.matches_done }}</span>
+                                    </span>
+                                {% endif %}
+                                {% if team.matches_done and team.matches_ongoing %}<span class="text-slate-600">-</span>{% endif %}
+                                {% if team.matches_ongoing %}
+                                    <span class="flex items-center gap-1 text-amber-400" title="{% trans 'En cours' %}">
+                                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                        <span class="font-bold">{{ team.matches_ongoing }}</span>
+                                    </span>
+                                {% endif %}
+                                {% if team.matches_ongoing and team.matches_coming %}<span class="text-slate-600">-</span>{% elif team.matches_done and team.matches_coming and not team.matches_ongoing %}<span class="text-slate-600">-</span>{% endif %}
+                                {% if team.matches_coming %}
+                                    <span class="flex items-center gap-1 text-slate-400" title="{% trans 'À venir' %}">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <span class="font-bold">{{ team.matches_coming }}</span>
+                                    </span>
+                                {% endif %}
+                                {% if not team.matches_done and not team.matches_ongoing and not team.matches_coming %}
+                                    <span class="text-slate-600">-</span>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                 {% empty %}

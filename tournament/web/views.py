@@ -121,7 +121,16 @@ class TournamentTeamsView(TournamentBaseView, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["teams"] = self.get_tournament().teams.all().order_by("number")
+        teams = (
+            self.get_tournament()
+            .teams.annotate(
+                matches_done=Count("matches", filter=Q(matches__status=Match.STATUSES.DONE)),
+                matches_ongoing=Count("matches", filter=Q(matches__status=Match.STATUSES.ONGOING)),
+                matches_coming=Count("matches", filter=Q(matches__status=Match.STATUSES.COMING)),
+            )
+            .order_by("number")
+        )
+        context["teams"] = teams
         return context
 
 
