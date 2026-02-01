@@ -3,6 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 
 from django.db.models import Q, Max, Count
+
 from tournament.models import Team, Match, Tournament
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,7 @@ class BaseSportController(ABC):
             teams = (
                 tournament.teams.annotate(
                     nb_matches=Count("matches"),
-                    nb_matches_pending=Count("matches", filter=Q(matches__status__in=[Match.STATUSES.COMING, Match.STATUSES.ONGOING])),
+                    nb_matches_pending=Count("matches", filter=Q(matches__status__in=Match.STATUSES_PENDING)),
                     last_match_end=Max("matches__date_end", filter=Q(matches__status=Match.STATUSES.DONE)),
                 )
                 .filter(
@@ -51,11 +52,15 @@ class BaseSportController(ABC):
                 break
         return new_matches
 
-    def _create_single_match(self, tournament: Tournament, team: Team, available_teams: list[Team] = []) -> Match | None:
+    def _create_single_match(
+        self, tournament: Tournament, team: Team, available_teams: list[Team] = []
+    ) -> Match | None:
         """
         Creates a match for a team and returns the created match or None if no match can be created.
         """
-        team_encounters = {t: {"nb_matches": 0, "last_match": tournament.date_created} for t in tournament.teams.all() if t != team}
+        team_encounters = {
+            t: {"nb_matches": 0, "last_match": tournament.date_created} for t in tournament.teams.all() if t != team
+        }
 
         # Listing opponents encounters and last match date
         for match in team.matches.prefetch_related("teams").all():
@@ -63,7 +68,9 @@ class BaseSportController(ABC):
                 if competitor != team:
                     assert competitor in team_encounters
                     team_encounters[competitor]["nb_matches"] += 1
-                    team_encounters[competitor]["last_match"] = max(team_encounters[competitor]["last_match"], match.date_created)
+                    team_encounters[competitor]["last_match"] = max(
+                        team_encounters[competitor]["last_match"], match.date_created
+                    )
 
         # Handle case where team has no matches yet
         min_encouters = min(team_encounters.values(), key=lambda x: x["nb_matches"])["nb_matches"]
@@ -72,7 +79,12 @@ class BaseSportController(ABC):
         candidates = [t for t, data in team_encounters.items() if data["nb_matches"] == min_encouters]
         if not candidates:
             # No possible opponent (only 1 team in tournament ?)
-            logger.info("No possible opponent for team %s (tournament %s, nb teams %s)", team, tournament, tournament.teams.count())
+            logger.info(
+                "No possible opponent for team %s (tournament %s, nb teams %s)",
+                team,
+                tournament,
+                tournament.teams.count(),
+            )
             return None
         if available_teams:
             quick_match = set(candidates).intersection(set(available_teams))
@@ -83,13 +95,7 @@ class BaseSportController(ABC):
         else:
             candidates.sort(key=lambda x: team_encounters[x]["last_match"])
 
-        # Creating match
-        opponents = [team, candidates[0]]  # TODO: add a way to know how many teams must join the match
-        last_match = tournament.matches.order_by("-ordering").first()
-        next_ordering = (last_match.ordering + 1) if last_match else 1
-        new_match = Match.objects.create(tournament=tournament, ordering=next_ordering, status=Match.STATUSES.COMING)
-        new_match.teams.set(opponents)
-        return new_match
+        return tournament.create_match(opponents=[team, candidates[0]])
 
 
 class GenericSportController(BaseSportController):

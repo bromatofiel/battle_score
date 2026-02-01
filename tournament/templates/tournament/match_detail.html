@@ -78,12 +78,28 @@
 
     <!-- Scores Section -->
     <div class="glass rounded-3xl overflow-hidden border-white/5">
-        <div class="p-6 border-b border-white/5">
-            <h3 class="text-lg font-bold text-white">{% trans "Scores" %}</h3>
-            <p class="text-sm text-slate-400 mt-1">{% trans "Scores pour chaque équipe de ce match." %}</p>
+        <div class="p-6 border-b border-white/5 flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <h3 class="text-lg font-bold text-white">{% trans "Scores" %}</h3>
+                <p class="text-sm text-slate-400 mt-1">{% trans "Scores pour chaque équipe de ce match." %}</p>
+            </div>
+            {% if is_admin %}
+            <div class="flex items-center gap-2">
+                <span class="text-sm text-slate-500 mr-2">{% trans "Statut" %} :</span>
+                <button type="submit" form="score-form" name="status" value="COMING" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all {% if match.status == 'COMING' %}bg-slate-500 text-white{% else %}bg-slate-700/50 text-slate-400 hover:bg-slate-700{% endif %}">
+                    {% trans "À venir" %}
+                </button>
+                <button type="submit" form="score-form" name="status" value="ONGOING" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all {% if match.status == 'ONGOING' %}bg-amber-500 text-white{% else %}bg-slate-700/50 text-slate-400 hover:bg-amber-500/30{% endif %}">
+                    {% trans "En cours" %}
+                </button>
+                <button type="submit" form="score-form" name="status" value="DONE" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all {% if match.status == 'DONE' %}bg-emerald-500 text-white{% else %}bg-slate-700/50 text-slate-400 hover:bg-emerald-500/30{% endif %}">
+                    {% trans "Terminé" %}
+                </button>
+            </div>
+            {% endif %}
         </div>
 
-        <form method="post" action="{% url 'tournament:score_update' tournament.id match.id %}">
+        <form id="score-form" method="post" action="{% url 'tournament:score_update' tournament.id match.id %}">
             {% csrf_token %}
             <div class="divide-y divide-white/5">
                 {% for team in match_teams %}

@@ -610,6 +610,8 @@ class ScoreUpdateView(TournamentBaseView, View):
 
         tournament = self.get_tournament()
         match = get_object_or_404(Match, id=kwargs.get("match_id"), tournament=tournament)
+        old_status = match.status
+        has_score = False
 
         # Process scores for each team in the match
         for team in match.teams.all():
@@ -621,11 +623,32 @@ class ScoreUpdateView(TournamentBaseView, View):
                     value = int(score_value)
                     # Create or update Score
                     Score.objects.update_or_create(match=match, team=team, defaults={"value": value})
+                    has_score = True
                 except ValueError:
                     pass  # Skip invalid values
             else:
                 # If empty, delete the score if it exists
                 Score.objects.filter(match=match, team=team).delete()
+
+        # Auto-switch to ONGOING if was COMING and a score is entered
+        if match.status == Match.STATUSES.COMING and has_score:
+            match.status = Match.STATUSES.ONGOING
+            match.save()
+            messages.info(request, _("Le match est passé en cours."))
+
+        # Handle status change via buttons
+        new_status = request.POST.get("status")
+        if new_status and new_status in [s[0] for s in Match.STATUSES]:
+            match.status = new_status
+            match.save()
+
+        # Auto-create next matches if match just finished
+        if old_status != Match.STATUSES.DONE and match.status == Match.STATUSES.DONE:
+            if tournament.auto_match_creation and tournament.nb_team_matches:
+                controller = get_sport_controller(tournament)
+                created = controller.create_next_matches(tournament)
+                if created:
+                    messages.info(request, _("%(count)d match(s) créé(s) automatiquement.") % {"count": len(created)})
 
         messages.success(request, _("Scores mis à jour."))
         return redirect("tournament:match_detail", tournament_id=tournament.id, match_id=match.id)

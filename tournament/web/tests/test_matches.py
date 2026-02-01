@@ -127,3 +127,29 @@ class ScoreUpdateTest(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Score.objects.filter(match=self.match, team=self.team1).count(), 0)
+
+    def test_auto_switch_to_ongoing_when_score_entered(self):
+        """Match should auto-switch from COMING to ONGOING when first score is entered."""
+        self.match.status = Match.STATUSES.COMING
+        self.match.save()
+        self.client.force_login(self.admin)
+
+        url = reverse("tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id})
+        response = self.client.post(url, {f"score_{self.team1.id}": "5"})
+
+        self.assertEqual(response.status_code, 302)
+        self.match.refresh_from_db()
+        self.assertEqual(self.match.status, Match.STATUSES.ONGOING)
+
+    def test_can_change_status_via_button(self):
+        """Admin should be able to change match status via button."""
+        self.match.status = Match.STATUSES.COMING
+        self.match.save()
+        self.client.force_login(self.admin)
+
+        url = reverse("tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id})
+        response = self.client.post(url, {"status": "DONE"})
+
+        self.assertEqual(response.status_code, 302)
+        self.match.refresh_from_db()
+        self.assertEqual(self.match.status, Match.STATUSES.DONE)

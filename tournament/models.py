@@ -1,9 +1,11 @@
 import random
 
-from django.db import models
+from django.db import models, transaction
+from django.conf import settings
+from django.db.models import Max
+
 from core.utils import enum
 from core.models import BaseModel
-from django.conf import settings
 from core.constants import COUNTRIES
 
 
@@ -25,7 +27,9 @@ class Tournament(BaseModel):
     )
 
     auto_match_creation = models.BooleanField(default=False)
-    nb_team_matches = models.PositiveIntegerField(null=True, blank=True, help_text="Max matches per team for auto-creation")
+    nb_team_matches = models.PositiveIntegerField(
+        null=True, blank=True, help_text="Max matches per team for auto-creation"
+    )
     name = models.CharField(max_length=255)
     sport = models.CharField(max_length=20, choices=SPORTS, default=SPORTS.GENERIC)
     description = models.TextField(blank=True)
@@ -39,6 +43,23 @@ class Tournament(BaseModel):
 
     def __str__(self):
         return self.name
+
+    def get_next_match_ordering(self):
+        last_match = self.matches.aggregate(Max("ordering"))["ordering__max"]
+        return (last_match + 1) if last_match else 1
+
+    def create_match(self, opponents):
+        """
+        Create a match between specified opponents while ensuring that the tournament is locked.
+        """
+        with transaction.atomic():
+            # Lock the tournament row to prevent race conditions
+            _lock = Tournament.objects.select_for_update().get(pk=self.pk)
+            next_ordering = self.get_next_match_ordering()
+            new_match = Match.objects.create(tournament=self, ordering=next_ordering, status=Match.STATUSES.COMING)
+            new_match.teams.set(opponents)
+        new_match.update_status(save=True)
+        return new_match
 
 
 class Team(BaseModel):
@@ -99,6 +120,7 @@ class Match(BaseModel):
         ONGOING=("ONGOING", "En cours"),
         DONE=("DONE", "Terminé"),
     )
+    STATUSES_PENDING = [STATUSES.COMING, STATUSES.ONGOING]
 
     date_end = models.DateTimeField(null=True, blank=True)
     date_start = models.DateTimeField(null=True, blank=True)
@@ -114,6 +136,21 @@ class Match(BaseModel):
 
     def __str__(self):
         return f"Match {self.ordering} in {self.tournament.name}"
+
+    def update_status(self, opponents: list[Team] = None, save=False):
+        if opponents is None:
+            opponents = self.teams.all()
+        teams_pending = set(
+            Team.objects.filter(tournament=self.tournament, matches__status__in=Match.STATUSES_PENDING).values_list(
+                "id", flat=True
+            )
+        )
+        all_available = all(t.id not in teams_pending for t in opponents)
+        next_status = Match.STATUSES.ONGOING if all_available else Match.STATUSES.COMING
+        if save and self.status != next_status:
+            self.status = next_status
+            self.save(update_fields=["status"])
+        return next_status
 
 
 class Score(BaseModel):
