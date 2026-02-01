@@ -163,7 +163,7 @@ class ScoreUpdateTest(TestCase):
         url = reverse(
             "tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id}
         )
-        response = self.client.post(url, {"status": "DONE"})
+        response = self.client.post(url, {"action": "finish"})
 
         self.assertEqual(response.status_code, 302)
         self.match.refresh_from_db()

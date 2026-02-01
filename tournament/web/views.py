@@ -677,19 +677,21 @@ class ScoreUpdateView(TournamentBaseView, View):
             match.save()
             messages.info(request, _("Le match est passé en cours."))
 
-        # Handle status change via buttons
-        new_status = request.POST.get("status")
-        if new_status and new_status in [s[0] for s in Match.STATUSES]:
-            match.status = new_status
+        # Handle action buttons
+        action = request.POST.get("action")
+        if action == "finish":
+            match.status = Match.STATUSES.DONE
             match.save()
 
-        # Auto-create next matches if match just finished
-        if old_status != Match.STATUSES.DONE and match.status == Match.STATUSES.DONE:
-            if tournament.auto_match_creation and tournament.nb_team_matches:
-                controller = get_sport_controller(tournament)
-                created = controller.create_next_matches(tournament)
-                if created:
-                    messages.info(request, _("%(count)d match(s) créé(s) automatiquement.") % {"count": len(created)})
+            # Auto-create next matches if match just finished
+            if old_status != Match.STATUSES.DONE:
+                if tournament.auto_match_creation and tournament.nb_team_matches:
+                    controller = get_sport_controller(tournament)
+                    created = controller.create_next_matches(tournament)
+                    if created:
+                        messages.info(
+                            request, _("%(count)d match(s) créé(s) automatiquement.") % {"count": len(created)}
+                        )
 
         messages.success(request, _("Scores mis à jour."))
         return redirect("tournament:match_detail", tournament_id=tournament.id, match_id=match.id)
