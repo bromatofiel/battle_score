@@ -91,9 +91,11 @@
                     <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
                     {% trans "En cours" %}
                 </h3>
-                {% for match in matches_ongoing %}
-                    {% include "tournament/_match_card.html" %}
-                {% endfor %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for match in matches_ongoing %}
+                        {% include "tournament/_match_card.html" %}
+                    {% endfor %}
+                </div>
             </div>
             {% endif %}
 
@@ -101,9 +103,11 @@
             {% if matches_coming %}
             <div class="space-y-4">
                 <h3 class="text-lg font-bold text-slate-400">{% trans "À venir" %}</h3>
-                {% for match in matches_coming %}
-                    {% include "tournament/_match_card.html" %}
-                {% endfor %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for match in matches_coming %}
+                        {% include "tournament/_match_card.html" %}
+                    {% endfor %}
+                </div>
             </div>
             {% endif %}
 
@@ -116,9 +120,11 @@
                     </svg>
                     {% trans "Terminés" %}
                 </h3>
-                {% for match in matches_done %}
-                    {% include "tournament/_match_card.html" %}
-                {% endfor %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for match in matches_done %}
+                        {% include "tournament/_match_card.html" %}
+                    {% endfor %}
+                </div>
             </div>
             {% endif %}
         {% endif %}

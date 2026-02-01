@@ -1,7 +1,8 @@
 from django.test import TestCase
 from django.urls import reverse
-from tournament.models import Match, Tournament
 from django.contrib.auth import get_user_model
+
+from tournament.models import Match, Tournament
 
 User = get_user_model()
 
@@ -11,7 +12,9 @@ class MatchListTest(TestCase):
 
     def setUp(self):
         self.admin = User.objects.create_user(username="admin", email="admin@match.test", password="password")
-        self.tournament = Tournament.objects.create(name="Test Tournament", admin=self.admin, status=Tournament.STATUSES.ONGOING)
+        self.tournament = Tournament.objects.create(
+            name="Test Tournament", admin=self.admin, status=Tournament.STATUSES.ONGOING
+        )
 
     def test_matches_list_shows_coming_matches(self):
         """Matches with COMING status should appear in the coming section."""
@@ -60,8 +63,8 @@ class MatchListTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context["has_matches"])
 
-    def test_matches_ordered_by_reverse_creation(self):
-        """Matches should be ordered by reverse creation date within each section."""
+    def test_coming_matches_ordered_by_ordering(self):
+        """Coming matches should be ordered by ordering ascending (#1 before #2)."""
         self.client.force_login(self.admin)
 
         match1 = Match.objects.create(tournament=self.tournament, ordering=1, status=Match.STATUSES.COMING)
@@ -72,10 +75,10 @@ class MatchListTest(TestCase):
         response = self.client.get(url)
 
         coming_matches = list(response.context["matches_coming"])
-        # Most recently created should be first
-        self.assertEqual(coming_matches[0], match3)
+        # Ordered by ordering ascending: #1, #2, #3
+        self.assertEqual(coming_matches[0], match1)
         self.assertEqual(coming_matches[1], match2)
-        self.assertEqual(coming_matches[2], match1)
+        self.assertEqual(coming_matches[2], match3)
 
 
 class ScoreUpdateTest(TestCase):
@@ -84,7 +87,9 @@ class ScoreUpdateTest(TestCase):
     def setUp(self):
         self.admin = User.objects.create_user(username="admin", email="admin@score.test", password="password")
         self.non_admin = User.objects.create_user(username="user", email="user@score.test", password="password")
-        self.tournament = Tournament.objects.create(name="Score Tournament", admin=self.admin, status=Tournament.STATUSES.ONGOING)
+        self.tournament = Tournament.objects.create(
+            name="Score Tournament", admin=self.admin, status=Tournament.STATUSES.ONGOING
+        )
         from tournament.models import Team
 
         self.team1 = Team.objects.create(tournament=self.tournament, name="Team A", number=1)
@@ -96,7 +101,9 @@ class ScoreUpdateTest(TestCase):
         """Admin should be able to create/update scores."""
         self.client.force_login(self.admin)
 
-        url = reverse("tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id})
+        url = reverse(
+            "tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id}
+        )
         response = self.client.post(url, {f"score_{self.team1.id}": "10", f"score_{self.team2.id}": "5"})
 
         self.assertEqual(response.status_code, 302)
@@ -110,7 +117,9 @@ class ScoreUpdateTest(TestCase):
         """Non-admin should get 403 when updating scores."""
         self.client.force_login(self.non_admin)
 
-        url = reverse("tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id})
+        url = reverse(
+            "tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id}
+        )
         response = self.client.post(url, {f"score_{self.team1.id}": "10"})
 
         self.assertEqual(response.status_code, 403)
@@ -122,7 +131,9 @@ class ScoreUpdateTest(TestCase):
         Score.objects.create(match=self.match, team=self.team1, value=10)
         self.client.force_login(self.admin)
 
-        url = reverse("tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id})
+        url = reverse(
+            "tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id}
+        )
         response = self.client.post(url, {f"score_{self.team1.id}": ""})
 
         self.assertEqual(response.status_code, 302)
@@ -134,7 +145,9 @@ class ScoreUpdateTest(TestCase):
         self.match.save()
         self.client.force_login(self.admin)
 
-        url = reverse("tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id})
+        url = reverse(
+            "tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id}
+        )
         response = self.client.post(url, {f"score_{self.team1.id}": "5"})
 
         self.assertEqual(response.status_code, 302)
@@ -147,7 +160,9 @@ class ScoreUpdateTest(TestCase):
         self.match.save()
         self.client.force_login(self.admin)
 
-        url = reverse("tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id})
+        url = reverse(
+            "tournament:score_update", kwargs={"tournament_id": self.tournament.id, "match_id": self.match.id}
+        )
         response = self.client.post(url, {"status": "DONE"})
 
         self.assertEqual(response.status_code, 302)

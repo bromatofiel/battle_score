@@ -6,12 +6,13 @@ from django.views import View
 from django.contrib import messages
 from django.db.models import Q, Count
 from django.shortcuts import redirect, get_object_or_404
-from tournament.models import Team, Match, Score, Tournament
 from django.views.generic import FormView, DeleteView, UpdateView, TemplateView
-from tournament.web.forms import TeamForm, TournamentForm, TournamentUpdateForm
-from tournament.controllers import get_sport_controller
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.mixins import LoginRequiredMixin
+
+from tournament.models import Team, Match, Score, Tournament
+from tournament.web.forms import TeamForm, TournamentForm, TournamentUpdateForm
+from tournament.controllers import get_sport_controller
 
 
 class TournamentCreateView(LoginRequiredMixin, FormView):
@@ -141,10 +142,13 @@ class TournamentMatchesView(TournamentBaseView, TemplateView):
         tournament = self.get_tournament()
         base_qs = tournament.matches.prefetch_related("teams", "scores__team")
 
-        # Split matches into 3 sections, ordered by reverse creation
-        matches_ongoing = base_qs.filter(status=Match.STATUSES.ONGOING).order_by("-date_created")
-        matches_coming = base_qs.filter(status=Match.STATUSES.COMING).order_by("-date_created")
-        matches_done = base_qs.filter(status=Match.STATUSES.DONE).order_by("-date_created")
+        # Split matches into 3 sections with specific ordering:
+        # - Ongoing: by start date (most recent first)
+        # - Coming: by ordering (ascending, #1 before #2)
+        # - Done: by end date (most recently finished first)
+        matches_ongoing = base_qs.filter(status=Match.STATUSES.ONGOING).order_by("-date_start")
+        matches_coming = base_qs.filter(status=Match.STATUSES.COMING).order_by("ordering")
+        matches_done = base_qs.filter(status=Match.STATUSES.DONE).order_by("-date_end")
 
         context["matches_ongoing"] = matches_ongoing
         context["matches_coming"] = matches_coming
@@ -174,7 +178,9 @@ class TournamentSettingsView(TournamentBaseView, FormView):
         if referer and "settings" not in referer and "menu" not in referer:
             request.session["tournament_settings_next_url"] = referer
         elif not request.session.get("tournament_settings_next_url"):
-            request.session["tournament_settings_next_url"] = redirect("tournament:teams", tournament_id=self.get_tournament().id).url
+            request.session["tournament_settings_next_url"] = redirect(
+                "tournament:teams", tournament_id=self.get_tournament().id
+            ).url
 
         return super().get(request, *args, **kwargs)
 
