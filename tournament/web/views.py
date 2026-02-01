@@ -351,22 +351,48 @@ class TournamentStartView(TournamentBaseView, View):
 
 
 class SetAutoMatchCreationView(TournamentBaseView, View):
-    """Set auto_match_creation setting for tournament."""
+    """Disable auto_match_creation for tournament."""
 
     def post(self, request, *args, **kwargs):
         if not self.is_tournament_admin():
             return HttpResponseForbidden(_("Seul l'administrateur peut modifier ce paramètre."))
 
-        value = kwargs.get("value", "").lower()
         tournament = self.get_tournament()
+        tournament.auto_match_creation = False
+        tournament.save()
+        return redirect("tournament:matches", tournament_id=tournament.id)
 
-        # Can only enable if nb_team_matches is set
-        if value == "true" and not tournament.nb_team_matches:
-            messages.error(request, _("Définissez d'abord le nombre de matchs par équipe."))
+
+class EnableAutoMatchView(TournamentBaseView, View):
+    """Enable auto_match_creation with nb_team_matches configuration."""
+
+    def post(self, request, *args, **kwargs):
+        if not self.is_tournament_admin():
+            return HttpResponseForbidden(_("Seul l'administrateur peut modifier ce paramètre."))
+
+        tournament = self.get_tournament()
+        value = request.POST.get("nb_team_matches", "").strip()
+
+        if not value:
+            messages.error(request, _("Veuillez indiquer le nombre de matchs par équipe."))
             return redirect("tournament:matches", tournament_id=tournament.id)
 
-        tournament.auto_match_creation = value == "true"
+        try:
+            tournament.nb_team_matches = int(value)
+        except ValueError:
+            messages.error(request, _("Valeur invalide."))
+            return redirect("tournament:matches", tournament_id=tournament.id)
+
+        tournament.auto_match_creation = True
         tournament.save()
+
+        # Auto-create matches if tournament is ongoing
+        if tournament.status == Tournament.STATUSES.ONGOING:
+            controller = get_sport_controller(tournament.sport)
+            created = controller.create_next_matches(tournament)
+            if created:
+                messages.info(request, _("%(count)d match(s) créé(s) automatiquement.") % {"count": len(created)})
+
         return redirect("tournament:matches", tournament_id=tournament.id)
 
 

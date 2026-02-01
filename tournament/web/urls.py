@@ -1,4 +1,5 @@
 from django.urls import path
+
 from tournament.web.views import (
     TeamCreateView,
     TeamDeleteView,
@@ -9,6 +10,7 @@ from tournament.web.views import (
     MatchDetailView,
     MatchUpdateView,
     ScoreUpdateView,
+    EnableAutoMatchView,
     TournamentStartView,
     TournamentTeamsView,
     SetNbTeamMatchesView,
@@ -37,7 +39,8 @@ urlpatterns = [
     path("<int:tournament_id>/ranking/", TournamentRankingView.as_view(), name="ranking"),
     path("<int:tournament_id>/settings/", TournamentSettingsView.as_view(), name="settings"),
     path("<int:tournament_id>/access/", TournamentAccessView.as_view(), name="access"),
-    path("<int:tournament_id>/set-auto-match/<str:value>/", SetAutoMatchCreationView.as_view(), name="set_auto_match"),
+    path("<int:tournament_id>/set-auto-match/disable/", SetAutoMatchCreationView.as_view(), name="disable_auto_match"),
+    path("<int:tournament_id>/set-auto-match/enable/", EnableAutoMatchView.as_view(), name="enable_auto_match"),
     path("<int:tournament_id>/set-nb-team-matches/", SetNbTeamMatchesView.as_view(), name="set_nb_team_matches"),
     path("<int:tournament_id>/teams/create/", TeamCreateView.as_view(), name="team_create"),
     path("<int:tournament_id>/teams/<int:team_id>/", TeamDetailView.as_view(), name="team_detail"),
