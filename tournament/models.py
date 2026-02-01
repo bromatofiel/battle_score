@@ -61,6 +61,24 @@ class Tournament(BaseModel):
         new_match.update_status(save=True)
         return new_match
 
+    def update_match_statuses(self, keep_match_order: bool = True):
+        """
+        Updates the statuses of matches in the tournament.
+        """
+        matches = self.matches.prefetch_related("teams").filter(status=Match.STATUSES.COMING)
+        excluded_teams = set()
+        ongoing_matches = []
+        for match in matches:
+            if keep_match_order:
+                if any(t.id in excluded_teams for t in match.teams.all()):
+                    # Skipping teams already required by previous matches
+                    continue
+                excluded_teams.update(t.id for t in match.teams.all())
+            match.update_status(save=True)
+            if match.status == Match.STATUSES.ONGOING:
+                ongoing_matches.append(match)
+        return ongoing_matches
+
 
 class Team(BaseModel):
     """
@@ -135,17 +153,18 @@ class Match(BaseModel):
         ordering = ["ordering"]
 
     def __str__(self):
-        return f"Match {self.ordering} in {self.tournament.name}"
+        return f"{self.tournament.name}#{self.ordering}"
 
     def update_status(self, opponents: list[Team] = None, save=False):
         if opponents is None:
+            # Cache optimisation (optional)
             opponents = self.teams.all()
-        teams_pending = set(
-            Team.objects.filter(tournament=self.tournament, matches__status__in=Match.STATUSES_PENDING).values_list(
+        teams_ongoing = set(
+            Team.objects.filter(tournament=self.tournament, matches__status=Match.STATUSES.ONGOING).values_list(
                 "id", flat=True
             )
         )
-        all_available = all(t.id not in teams_pending for t in opponents)
+        all_available = all(t.id not in teams_ongoing for t in opponents)
         next_status = Match.STATUSES.ONGOING if all_available else Match.STATUSES.COMING
         if save and self.status != next_status:
             self.status = next_status

@@ -17,7 +17,7 @@ class BaseSportController(ABC):
         """
         raise NotImplementedError
 
-    def create_next_matches(self, tournament: Tournament) -> list[Match]:
+    def create_next_matches(self, tournament: Tournament, update_match_statuses: bool = True) -> list[Match]:
         """
         Creates the next matches for auto-match tournaments.
         Returns list of created matches.
@@ -50,6 +50,8 @@ class BaseSportController(ABC):
                     new_matches.append(new_match)
             else:
                 break
+        if update_match_statuses:
+            tournament.update_match_statuses()
         return new_matches
 
     def _create_single_match(
