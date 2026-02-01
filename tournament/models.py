@@ -165,6 +165,15 @@ class Score(BaseModel):
     class Meta:
         unique_together = ("match", "team")
 
+    @property
+    def is_winner(self):
+        """Returns True if this score is the highest in the match (no ties)."""
+        other_scores = self.match.scores.exclude(pk=self.pk)
+        if not other_scores.exists():
+            return False
+        max_other = max(s.value for s in other_scores)
+        return self.value > max_other
+
 
 class Classment(BaseModel):
     """

@@ -105,11 +105,11 @@
 
             <!-- Section: À venir -->
             {% if matches_coming %}
-            <div class="space-y-4">
+            <div class="space-y-2">
                 <h3 class="text-lg font-bold text-slate-400">{% trans "À venir" %}</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {% for match in matches_coming %}
-                        {% include "tournament/_match_card.html" %}
+                        {% include "tournament/_match_card_coming.html" %}
                     {% endfor %}
                 </div>
             </div>
@@ -117,16 +117,16 @@
 
             <!-- Section: Terminés -->
             {% if matches_done %}
-            <div class="space-y-4">
+            <div class="space-y-2">
                 <h3 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
                     {% trans "Terminés" %}
                 </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {% for match in matches_done %}
-                        {% include "tournament/_match_card.html" %}
+                        {% include "tournament/_match_card_done.html" %}
                     {% endfor %}
                 </div>
             </div>
